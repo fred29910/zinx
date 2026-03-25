@@ -34,7 +34,47 @@ https://github.com/aceld/mmo_game_client
 
 [ < Zinx 文档 : 简体中文> ](https://www.yuque.com/aceld/tsgooa/sbvzgczh3hqz8q3l)
 
-## 四、Zinx 在线开发教程
+## 四、v3 升级说明
+
+这个示例已经按照根目录 `MIGRATION.md` 里的 v3 推荐方式完成升级：
+
+- 服务端入口改为 `UseContext` + `AddRouterSlicesContext`
+- 世界聊天和移动路由从 `IRequest` 风格迁移到 `HandlerFunc`
+- 增加了一个路由中间件，统一从连接属性 `pID` 解析当前玩家并写入 `ziface.Context`
+- 增加了 `Context.Release()` 中间件，请求处理完成后把对象归还到池中
+- 示例配置打开了 `RouterSlicesMode` 和 `RequestPoolMode`
+
+连接建立与断开钩子保持不变，所以整体业务流程仍然是：
+
+1. 玩家建立连接
+2. 服务端发送 `SyncPID`
+3. 广播出生坐标
+4. 同步 AOI 周边玩家
+5. 后续聊天和移动走 v3 Context 路由
+
+## 五、运行方式
+
+推荐在示例目录内启动服务端，这样会自动读取当前目录下的 `conf/zinx.json`：
+
+```bash
+cd zinx_app_demo/mmo_game
+go run .
+```
+
+如果你想从仓库根目录启动，也可以显式指定配置文件：
+
+```bash
+export ZINX_CONFIG_FILE_PATH=$(pwd)/zinx_app_demo/mmo_game/conf/zinx.json
+go run ./zinx_app_demo/mmo_game
+```
+
+运行机器人客户端：
+
+```bash
+go run -tags robot ./zinx_app_demo/mmo_game/client_AI_robot.go
+```
+
+## 六、Zinx 在线开发教程
 
 ### 文字教程
 

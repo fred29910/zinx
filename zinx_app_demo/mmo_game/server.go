@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 
+	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/zdecoder"
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/zinx_app_demo/mmo_game/api"
@@ -67,19 +68,36 @@ func OnConnectionLost(conn ziface.IConnection) {
 
 }
 
+func releaseContextMiddleware() ziface.HandlerFunc {
+	return func(c *ziface.Context) {
+		defer c.Release()
+		c.Next()
+	}
+}
+
 func main() {
 	// Create a server instance
 	// 创建服务器句柄
-	s := znet.NewServer()
+	s := znet.NewUserConfServer(&zconf.Config{
+		RouterSlicesMode: true,
+		RequestPoolMode:  true,
+	})
 
 	// Register functions for client connection establishment and loss
 	// 注册客户端连接建立和丢失函数
 	s.SetOnConnStart(OnConnectionAdd)
 	s.SetOnConnStop(OnConnectionLost)
 
-	// Register routers
-	s.AddRouter(2, &api.WorldChatApi{})
-	s.AddRouter(3, &api.MoveApi{})
+	// Register global middleware and context-based routers.
+	// 注册全局中间件和基于 Context 的路由
+	s.UseContext(
+		releaseContextMiddleware(),
+		znet.RecoveryMiddleware(),
+		znet.SlogLoggerMiddleware(),
+	)
+
+	s.AddRouterSlicesContext(2, api.RequirePlayer(), api.WorldChat)
+	s.AddRouterSlicesContext(3, api.RequirePlayer(), api.Move)
 
 	// Add LTV data format Decoder
 	s.SetDecoder(zdecoder.NewLTV_Little_Decoder())
