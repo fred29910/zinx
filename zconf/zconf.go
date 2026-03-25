@@ -6,17 +6,14 @@
 package zconf
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/aceld/zinx/v3/zutils"
 )
 
 const (
@@ -91,22 +88,7 @@ type Config struct {
 
 	// 是否开启 Request 对象池模式
 	RequestPoolMode bool
-	/*
-		logger
-	*/
-	LogDir string // The directory where log files are stored. The default value is "./log".(日志所在文件夹 默认"./log")
-
-	// The name of the log file. If it is empty, the log information will be printed to stderr.
-	// (日志文件名称   默认""  --如果没有设置日志文件，打印信息将打印至stderr)
-	LogFile string
-
-	LogSaveDays int   // 日志最大保留天数
-	LogFileSize int64 // 日志单个日志最大容量 默认 64MB,单位：字节，记得一定要换算成MB（1024 * 1024）
-	LogCons     bool  // 日志标准输出  默认 false
-
-	// The level of log isolation. The values can be 0 (all open), 1 (debug off), 2 (debug/info off), 3 (debug/info/warn off), and so on.
-	// 日志隔离级别  -- 0：全开 1：关debug 2：关debug/info 3：关debug/info/warn ...
-	LogIsolationLevel int
+	
 
 	/*
 		Keepalive
@@ -149,7 +131,7 @@ func (g *Config) Reload() {
 		// The configuration file may not exist,
 		// in which case the default parameters should be used to initialize the logging module configuration.
 		// (配置文件不存在也需要用默认参数初始化日志模块配置)
-		g.InitLogConfig()
+		
 
 		slog.Error(fmt.Sprintf("Config File %s is not exist!! \n You can set configFile by setting the environment variable %s, like export %s = xxx/xxx/zinx.conf ", confFilePath, EnvConfigFilePathKey, EnvConfigFilePathKey))
 		return
@@ -165,7 +147,7 @@ func (g *Config) Reload() {
 		panic(err)
 	}
 
-	g.InitLogConfig()
+	
 }
 
 // Show Zinx Config Info
@@ -187,77 +169,10 @@ func (g *Config) HeartbeatMaxDuration() time.Duration {
 	return time.Duration(g.HeartbeatMax) * time.Second
 }
 
-// zinxLogHandler is the package-level slog handler for zconf-driven log config.
-// It is set by InitLogConfig and used to configure the global slog logger.
-var zinxLogHandler *zinxConfHandler
-
-// zinxConfHandler wraps a zutils.Writer to implement slog.Handler for file rotation.
-type zinxConfHandler struct {
-	inner slog.Handler
-	fw    *zutils.Writer
-}
-
-func (h *zinxConfHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return h.inner.Enabled(ctx, level)
-}
-func (h *zinxConfHandler) Handle(ctx context.Context, r slog.Record) error {
-	return h.inner.Handle(ctx, r)
-}
-func (h *zinxConfHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &zinxConfHandler{inner: h.inner.WithAttrs(attrs), fw: h.fw}
-}
-func (h *zinxConfHandler) WithGroup(name string) slog.Handler {
-	return &zinxConfHandler{inner: h.inner.WithGroup(name), fw: h.fw}
-}
-
-func (g *Config) InitLogConfig() {
-	if g.LogFile != "" {
-		fw := zutils.New(filepath.Join(g.LogDir, g.LogFile))
-		if g.LogCons {
-			fw.SetCons(true)
-		}
-		if g.LogSaveDays > 0 {
-			fw.SetMaxAge(g.LogSaveDays)
-		}
-		if g.LogFileSize > 0 {
-			fw.SetMaxSize(g.LogFileSize)
-		}
-		h := slog.NewTextHandler(fw, &slog.HandlerOptions{
-			Level: isolationLevelToSlog(g.LogIsolationLevel),
-		})
-		slog.SetDefault(slog.New(h))
-	} else if g.LogIsolationLevel > 0 {
-		h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-			Level: isolationLevelToSlog(g.LogIsolationLevel),
-		})
-		slog.SetDefault(slog.New(h))
-	}
-}
-
-// isolationLevelToSlog converts a zinx log isolation level (int) to slog.Level.
-// 0=Debug, 1=Info, 2=Warn, 3+=Error
-func isolationLevelToSlog(level int) slog.Level {
-	switch level {
-	case 0:
-		return slog.LevelDebug
-	case 1:
-		return slog.LevelInfo
-	case 2:
-		return slog.LevelWarn
-	default:
-		return slog.LevelError
-	}
-}
-
 /*
 init, set default value
 */
 func init() {
-	pwd, err := os.Getwd()
-	if err != nil {
-		pwd = "."
-	}
-
 	// Note: Prevent errors like "flag provided but not defined: -test.paniconexit0" from occurring in go test.
 	// (防止 go test 出现"flag provided but not defined: -test.paniconexit0"等错误)
 	testing.Init()
@@ -278,9 +193,6 @@ func init() {
 		MaxWorkerTaskLen:  1024,
 		WorkerMode:        "",
 		MaxMsgChanLen:     1024,
-		LogDir:            pwd + "/log",
-		LogFile:           "", // if set "", print to Stderr(默认日志文件为空，打印到stderr)
-		LogIsolationLevel: 0,
 		HeartbeatMax:      10, // The default maximum interval for heartbeat detection is 10 seconds. (默认心跳检测最长间隔为10秒)
 		IOReadBuffSize:    1024,
 		CertFile:          "",

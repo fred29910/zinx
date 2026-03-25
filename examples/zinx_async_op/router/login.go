@@ -1,26 +1,23 @@
 package router
 
 import (
-	"log/slog"
-
 	"encoding/json"
+	"log/slog"
 	"time"
 
 	"github.com/aceld/zinx/v3/examples/zinx_async_op/async_op_apis"
 	"github.com/aceld/zinx/v3/examples/zinx_async_op/db_model"
 	"github.com/aceld/zinx/v3/examples/zinx_async_op/msg_struct"
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/znet"
 )
 
-type LoginRouter struct {
-	znet.BaseRouter
-}
-
-func (hr *LoginRouter) Handle(request ziface.IRequest) {
+func LoginHandler(c *ziface.Context) {
 	slog.Debug("AsyncOpRouter Handle IN ===>111")
 
-	asyncResult := async_op_apis.AsyncUserSaveData(request) // // Test DB asynchronous operation(测试DB异步操作)
+	// Capture the connection now; the async callback can run after
+	// the request/context lifecycle has finished.
+	conn := c.Conn
+	asyncResult := async_op_apis.AsyncUserSaveData(conn) // Test DB asynchronous operation(测试DB异步操作)
 
 	// 测试：执行了一大推业务逻辑,才设置回调函数
 	// Test: A lot of business logic is executed before setting the callback function
@@ -50,7 +47,6 @@ func (hr *LoginRouter) Handle(request ziface.IRequest) {
 		}
 
 		// Send response to the client
-		conn := request.GetConnection()
 		if sendErr := conn.SendMsg(1, marshalData); sendErr != nil {
 			slog.Error("LoginRouter sendErr", "detail", sendErr.Error())
 			return

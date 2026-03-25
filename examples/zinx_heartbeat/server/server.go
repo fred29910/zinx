@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/znet"
 )
@@ -22,16 +23,15 @@ func myOnRemoteNotAlive(conn ziface.IConnection) {
 	conn.Stop()
 }
 
-// User-defined method for handling heartbeat messages (用户自定义的心跳检测消息处理方法)
-type myHeartBeatRouter struct {
-	znet.BaseRouter
-}
-
-func (r *myHeartBeatRouter) Handle(request ziface.IRequest) {
-	slog.Debug("in MyHeartBeatRouter Handle", "msgId", request.GetMsgID(), "data", string(request.GetData()))
+// User-defined heartbeat message handling function (用户自定义的心跳检测消息处理函数)
+func myHeartBeatHandler(request ziface.IRequest) {
+	slog.Debug("in myHeartBeatHandler", "msgId", request.GetMsgID(), "data", string(request.GetData()))
 }
 
 func main() {
+	// Enable v3 RouterSlices mode so heartbeat can use RouterSlices.
+	zconf.GlobalObject.RouterSlicesMode = true
+
 	s := znet.NewServer()
 
 	myHeartBeatMsgID := 88888
@@ -40,7 +40,7 @@ func main() {
 	s.StartHeartBeatWithOption(1*time.Second, &ziface.HeartBeatOption{
 		MakeMsg:          myHeartBeatMsg,
 		OnRemoteNotAlive: myOnRemoteNotAlive,
-		Router:           &myHeartBeatRouter{},
+		RouterSlices:     []ziface.RouterHandler{myHeartBeatHandler},
 		HeartBeatMsgID:   uint32(myHeartBeatMsgID),
 	})
 

@@ -44,32 +44,6 @@ func UserConfToGlobal(config *Config) {
 		GlobalObject.IOReadBuffSize = config.IOReadBuffSize
 	}
 
-	// logger — apply isolation level via slog (0=Debug is default, no change needed)
-	GlobalObject.LogIsolationLevel = config.LogIsolationLevel
-	if GlobalObject.LogIsolationLevel > 0 {
-		GlobalObject.InitLogConfig()
-	}
-
-	// Different from the required fields mentioned above, the logging module should use the default configuration if it is not configured.
-	// (不同于上方必填项 日志目前如果没配置应该使用默认配置)
-	if config.LogDir != "" {
-		GlobalObject.LogDir = config.LogDir
-	}
-
-	if config.LogFile != "" {
-		GlobalObject.LogFile = config.LogFile
-		GlobalObject.InitLogConfig()
-	}
-	if config.LogSaveDays > 0 {
-		GlobalObject.LogSaveDays = config.LogSaveDays
-	}
-	if config.LogFileSize > 0 {
-		GlobalObject.LogFileSize = config.LogFileSize
-	}
-	if config.LogCons {
-		GlobalObject.LogCons = config.LogCons
-	}
-
 	// Keepalive
 	if config.HeartbeatMax != 0 {
 		GlobalObject.HeartbeatMax = config.HeartbeatMax

@@ -6,10 +6,10 @@ import (
 	"github.com/aceld/zinx/v3/ziface"
 )
 
-func AsyncUserSaveData(request ziface.IRequest) *zasync_op.AsyncOpResult {
+func AsyncUserSaveData(conn ziface.IConnection) *zasync_op.AsyncOpResult {
 
 	opId := 1 // player's unique identifier Id (玩家的唯一标识Id)
-	asyncResult := zasync_op.NewAsyncOpResult(request.GetConnection())
+	asyncResult := zasync_op.NewAsyncOpResult(conn)
 
 	zasync_op.Process(
 		int(opId),

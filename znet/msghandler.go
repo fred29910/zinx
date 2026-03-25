@@ -271,8 +271,16 @@ func (mh *MsgHandle) Intercept(chain ziface.IChain) ziface.IcResp {
 				// (从绑定好的消息和对应的处理方法中执行对应的Handle方法)
 				if !zconf.GlobalObject.RouterSlicesMode {
 					go mh.doMsgHandler(iRequest, WorkerIDWithoutWorkerPool)
-				} else if zconf.GlobalObject.RouterSlicesMode {
-					go mh.doMsgHandlerSlices(iRequest, WorkerIDWithoutWorkerPool)
+				} else {
+					mh.RouterSlicesContext.RLock()
+					useContext := len(mh.RouterSlicesContext.Apis) > 0 || len(mh.RouterSlicesContext.Handlers) > 0
+					mh.RouterSlicesContext.RUnlock()
+
+					if useContext {
+						go mh.doMsgHandlerSlicesContext(iRequest, WorkerIDWithoutWorkerPool)
+					} else {
+						go mh.doMsgHandlerSlices(iRequest, WorkerIDWithoutWorkerPool)
+					}
 				}
 
 			}
@@ -438,8 +446,16 @@ func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest
 
 				if !zconf.GlobalObject.RouterSlicesMode {
 					mh.doMsgHandler(req, workerID)
-				} else if zconf.GlobalObject.RouterSlicesMode {
-					mh.doMsgHandlerSlices(req, workerID)
+				} else {
+					mh.RouterSlicesContext.RLock()
+					useContext := len(mh.RouterSlicesContext.Apis) > 0 || len(mh.RouterSlicesContext.Handlers) > 0
+					mh.RouterSlicesContext.RUnlock()
+
+					if useContext {
+						mh.doMsgHandlerSlicesContext(req, workerID)
+					} else {
+						mh.doMsgHandlerSlices(req, workerID)
+					}
 				}
 			}
 		}

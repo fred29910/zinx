@@ -2,33 +2,25 @@ package main
 
 import (
 	"log/slog"
-
-	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/aceld/zinx/v3/examples/zinx_client/c_router"
+	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/znet"
 )
 
-type PositionClientRouter struct {
-	znet.BaseRouter
-}
-
-func (this *PositionClientRouter) Handle(request ziface.IRequest) {
-
-}
-
 // 客户端自定义业务
 func business(conn ziface.IConnection) {
-
 	for {
-		err := conn.SendMsg(1, []byte("ping ping ping ..."))
+		// Keep msgID consistent with server-side router slices.
+		// (客户端发送 -> server 的 msgID=100 -> server 回包 msgID=2 -> 客户端处理)
+		err := conn.SendMsg(100, []byte("ping ping ping ..."))
 		if err != nil {
 			slog.Debug("error occurred", "err", err)
-
+			break
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -43,36 +35,70 @@ func DoClientConnectedBegin(conn ziface.IConnection) {
 	go business(conn)
 }
 
-func wait() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	sig := <-c
-	slog.Debug("exit", "sig", sig)
+// releaseContextMiddleware releases the pooled Context after the middleware chain is done.
+// (在整条 handler 链执行完成后归还 Context 对象池)
+func releaseContextMiddleware() ziface.HandlerFunc {
+	return func(c *ziface.Context) {
+		defer c.Release()
+		c.Next()
+	}
+}
+
+func PingRouter(c *ziface.Context) {
+	slog.Debug("Call PingRouter Handle")
+	slog.Debug("recv from server", "msgID", c.MsgID, "data", string(c.Data), "len", len(c.Data))
+
+	if err := c.Conn.SendBuffMsg(1, []byte("Hello[from client]")); err != nil {
+		slog.Error("error", "err", err)
+	}
+}
+
+func HelloRouter(c *ziface.Context) {
+	slog.Debug("Call HelloZinxRouter Handle")
+	slog.Debug("recv from server", "msgID", c.MsgID, "data", string(c.Data), "len", len(c.Data))
 }
 
 func main() {
+	// Enable v3 context-based router slices.
+	zconf.GlobalObject.Mode = ""
+	zconf.GlobalObject.RouterSlicesMode = true
+
 	// Create a Client.
 	client := znet.NewWsClient("127.0.0.1", 9000)
 
+	// Register v3 context-based global middlewares (for the client's message processing pipeline).
+	client.GetMsgHandler().UseContext(
+		releaseContextMiddleware(),
+		znet.RecoveryMiddleware(),
+		znet.SlogLoggerMiddleware(),
+	)
+
+	// Register business logic via context-based router slices.
+	client.GetMsgHandler().AddRouterSlicesContext(2, PingRouter)   // server -> msgID=2
+	client.GetMsgHandler().AddRouterSlicesContext(3, HelloRouter)  // server -> msgID=3
+
 	// Add business logic for when the connection is first established.(添加首次建立连接时的业务)
 	client.SetOnConnStart(DoClientConnectedBegin)
-	// Register business routing for receiving messages from the server.(注册收到服务器消息业务路由)
-	client.AddRouter(2, &c_router.PingRouter{})
-	client.AddRouter(3, &c_router.HelloRouter{})
+
 	// Start the client.
 	client.Start()
-	select {
-	case err := <-client.GetErrChan():
-		// Handle the errors returned by the client.(处理客户端返回的错误)
-		slog.Error(fmt.Sprintf("client err:%v", err))
-	}
 
-	// close
+	// Wait for either client error or process signal.
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		if err := <-client.GetErrChan(); err != nil {
+			slog.Error("client err", "err", err)
+			// Unblock main by emitting a signal into the same channel.
+			// (避免在 goroutine 中再去读取 `c`，否则会抢走 main 的信号)
+			c <- os.Interrupt
+		}
+	}()
+
 	sig := <-c
 	slog.Debug("exit", "sig", sig)
 	// Clean up the client.(清理客户端)
 	client.Stop()
-	time.Sleep(time.Second * 2)
+	time.Sleep(2 * time.Second)
 }

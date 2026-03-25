@@ -3,10 +3,14 @@ package main
 import (
 	"time"
 
+	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/znet"
 )
 
 func main() {
+	// Enable v3 RouterSlices mode so the default heartbeat uses RouterSlices.
+	zconf.GlobalObject.RouterSlicesMode = true
+
 	s := znet.NewServer()
 
 	// Start heartbeating detection.
