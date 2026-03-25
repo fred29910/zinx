@@ -1,11 +1,11 @@
 package znet
 
 import (
-	"log/slog"
 	"crypto/rand"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -236,11 +236,11 @@ func (s *Server) StartConn(conn ziface.IConnection) {
 }
 
 func (s *Server) ListenTcpConn() {
-	slog.Info(fmt.Sprintf("[START] TCP Server name: %s,listener at IP: %s, Port %d is starting", s.Name, s.IP, s.Port))
+	slog.Info("[START] TCP Server is starting", "Name", s.Name, "IP", s.IP, "Port", s.Port)
 	// 1. Get a TCP address
 	addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {
-		slog.Error(fmt.Sprintf("[START] resolve tcp addr err: %v\n", err))
+		slog.Error("[START] resolve tcp addr err", "err", err)
 		return
 	}
 
@@ -275,7 +275,7 @@ func (s *Server) ListenTcpConn() {
 			// 3.1 Set the maximum connection control for the server. If it exceeds the maximum connection, wait.
 			// (设置服务器最大连接控制,如果超过最大连接，则等待)
 			if s.ConnMgr.Len() >= zconf.GlobalObject.MaxConn {
-				slog.Info(fmt.Sprintf("Exceeded the maxConnNum:%d, Wait:%d", zconf.GlobalObject.MaxConn, AcceptDelay.duration))
+				slog.Info("Exceeded the maxConnNum", "MaxConn", zconf.GlobalObject.MaxConn, "Wait", AcceptDelay.duration)
 				AcceptDelay.Delay()
 				continue
 			}
@@ -285,10 +285,10 @@ func (s *Server) ListenTcpConn() {
 			if err != nil {
 				//Go 1.17+
 				if errors.Is(err, net.ErrClosed) {
-					slog.Error(fmt.Sprintf("Listener closed"))
+					slog.Error("Listener closed")
 					return
 				}
-				slog.Error(fmt.Sprintf("Accept err: %v", err))
+				slog.Error("Accept err", "err", err)
 				AcceptDelay.Delay()
 				continue
 			}
@@ -308,18 +308,18 @@ func (s *Server) ListenTcpConn() {
 	case <-s.exitChan:
 		err := listener.Close()
 		if err != nil {
-			slog.Error(fmt.Sprintf("listener close err: %v", err))
+			slog.Error("listener close err", "err", err)
 		}
 	}
 }
 
 func (s *Server) ListenWebsocketConn() {
-	slog.Info(fmt.Sprintf("[START] WEBSOCKET Server name: %s,listener at IP: %s, Port %d, Path %s is starting", s.Name, s.IP, s.WsPort, s.WsPath))
+	slog.Info("[START] WEBSOCKET Server is starting", "Name", s.Name, "IP", s.IP, "Port", s.WsPort, "Path", s.WsPath)
 	http.HandleFunc(s.WsPath, func(w http.ResponseWriter, r *http.Request) {
 		// 1. Check if the server has reached the maximum allowed number of connections
 		// (设置服务器最大连接控制,如果超过最大连接，则等待)
 		if s.ConnMgr.Len() >= zconf.GlobalObject.MaxConn {
-			slog.Info(fmt.Sprintf("Exceeded the maxConnNum:%d, Wait:%d", zconf.GlobalObject.MaxConn, AcceptDelay.duration))
+			slog.Info("Exceeded the maxConnNum", "MaxConn", zconf.GlobalObject.MaxConn, "Wait", AcceptDelay.duration)
 			AcceptDelay.Delay()
 			return
 		}
@@ -328,7 +328,7 @@ func (s *Server) ListenWebsocketConn() {
 		if s.websocketAuth != nil {
 			err := s.websocketAuth(r)
 			if err != nil {
-				slog.Error(fmt.Sprintf(" websocket auth err:%v", err))
+				slog.Error("websocket auth err", "err", err)
 				w.WriteHeader(401)
 				AcceptDelay.Delay()
 				return
@@ -343,7 +343,7 @@ func (s *Server) ListenWebsocketConn() {
 		// (升级成 websocket 连接)
 		conn, err := s.upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			slog.Error(fmt.Sprintf("new websocket err:%v", err))
+			slog.Error("new websocket err", "err", err)
 			w.WriteHeader(500)
 			AcceptDelay.Delay()
 			return
@@ -376,18 +376,18 @@ func (s *Server) ListenKcpConn() {
 	// 1. Listen to the server address
 	listener, err := kcp.ListenWithOptions(fmt.Sprintf("%s:%d", s.IP, s.KcpPort), nil, s.kcpConfig.KcpFecDataShards, s.kcpConfig.KcpFecParityShards)
 	if err != nil {
-		slog.Error(fmt.Sprintf("[START] resolve KCP addr err: %v\n", err))
+		slog.Error("[START] resolve KCP addr err", "err", err)
 		return
 	}
 
-	slog.Info(fmt.Sprintf("[START] KCP server listening at IP: %s, Port %d, Addr %s", s.IP, s.KcpPort, listener.Addr().String()))
+	slog.Info("[START] KCP server is listening", "IP", s.IP, "Port", s.KcpPort, "Addr", listener.Addr().String())
 	// 2. Start server network connection business
 	go func() {
 		for {
 			// 2.1 Set the maximum connection control for the server. If it exceeds the maximum connection, wait.
 			// (设置服务器最大连接控制,如果超过最大连接，则等待)
 			if s.ConnMgr.Len() >= zconf.GlobalObject.MaxConn {
-				slog.Info(fmt.Sprintf("Exceeded the maxConnNum:%d, Wait:%d", zconf.GlobalObject.MaxConn, AcceptDelay.duration))
+				slog.Info("Exceeded the maxConnNum", "MaxConn", zconf.GlobalObject.MaxConn, "Wait", AcceptDelay.duration)
 				AcceptDelay.Delay()
 				continue
 			}
@@ -395,7 +395,7 @@ func (s *Server) ListenKcpConn() {
 			// (阻塞等待客户端建立连接请求)
 			conn, err := listener.Accept()
 			if err != nil {
-				slog.Error(fmt.Sprintf("Accept KCP err: %v", err))
+				slog.Error("Accept KCP err", "err", err)
 				AcceptDelay.Delay()
 				continue
 			}
@@ -421,7 +421,7 @@ func (s *Server) ListenKcpConn() {
 	case <-s.exitChan:
 		err := listener.Close()
 		if err != nil {
-			slog.Error(fmt.Sprintf("KCP listener close err: %v", err))
+			slog.Error("KCP listener close err", "err", err)
 		}
 	}
 }
@@ -458,7 +458,7 @@ func (s *Server) Start() {
 
 // Stop stops the server (停止服务)
 func (s *Server) Stop() {
-	slog.Info(fmt.Sprintf("[STOP] Zinx server , name %s", s.Name))
+	slog.Info("[STOP] Zinx server", "name", s.Name)
 
 	// Clear other connection information or other information that needs to be cleaned up
 	// (将其他需要清理的连接信息或者其他信息 也要一并停止或者清理)
@@ -475,7 +475,7 @@ func (s *Server) Serve() {
 	// Listen for specified signals: ctrl+c or kill signal (监听指定信号 ctrl+c kill信号)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-c
-	slog.Info(fmt.Sprintf("[SERVE] Zinx server , name %s, Serve Interrupt, signal = %v", s.Name, sig))
+	slog.Info("[SERVE] Zinx server Serve Interrupt", "name", s.Name, "signal", sig)
 }
 
 func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {

@@ -30,7 +30,7 @@ func wait() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 }
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 				err := connection.SendMsg(1, []byte("Ping with TLS"))
 
 				if err != nil {
-					fmt.Println(err)
+					slog.Debug("error occurred", "err", err)
 					break
 				}
 

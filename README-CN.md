@@ -96,7 +96,7 @@ DownLoad zinx Source
 $go get github.com/aceld/zinx
 ```
 
-> note: Golang Version 1.21+
+> note: Golang Version 1.26+
 
 #### Zinx-Server
 ```go

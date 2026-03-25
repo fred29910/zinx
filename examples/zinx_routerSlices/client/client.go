@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"net"
 
 	"github.com/aceld/zinx/v3/zpack"
@@ -10,7 +10,7 @@ import (
 func main() {
 	conn, err := net.Dial("tcp", "127.0.0.1:8999")
 	if err != nil {
-		fmt.Println("client start err, exit!", err)
+		slog.Debug("client start err, exit!", "err", err)
 		return
 	}
 
@@ -18,7 +18,7 @@ func main() {
 	msg, _ := dp.Pack(zpack.NewMsgPackage(1, []byte("ZinxPing")))
 	_, err = conn.Write(msg)
 	if err != nil {
-		fmt.Println("write error err ", err)
+		slog.Debug("write error err ", "err", err)
 		return
 	}
 

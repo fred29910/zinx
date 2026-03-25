@@ -7,12 +7,11 @@ package ztimer
  */
 
 import (
-	"log/slog"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
-
 )
 
 /*

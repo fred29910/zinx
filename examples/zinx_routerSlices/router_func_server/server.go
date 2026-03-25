@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/ziface"
@@ -11,7 +11,7 @@ import (
 func Auth1(request ziface.IRequest) {
 
 	// Verify business, default to pass. (验证业务 默认固定放行)
-	fmt.Println("I am the Auth1, I will always pass.")
+	slog.Debug("I am the Auth1, I will always pass.")
 	// I am validation handler 1, and I must pass.
 	// Note that the next function will start executing and return here after all functions are executed.
 	// (注意是进入下一个函数开始执行，全部执行完后 回到此处)
@@ -23,18 +23,18 @@ func Auth2(request ziface.IRequest) {
 
 	// Terminate execution function, no more handlers will be executed after this one.(终结执行函数，再这个处理器结束后不会在执行后面的处理器)
 	request.Abort()
-	fmt.Println("I am the Auth2, I will definitely not pass.")
-	fmt.Println("The business terminates here and the subsequent handlers will not be executed.")
+	slog.Debug("I am the Auth2, I will definitely not pass.")
+	slog.Debug("The business terminates here and the subsequent handlers will not be executed.")
 }
 
 func Auth3(request ziface.IRequest) {
 
-	fmt.Println("I am the group validation function.")
+	slog.Debug("I am the group validation function.")
 }
 
 // I am a business function.
 func TestFunc(request ziface.IRequest) {
-	fmt.Println("I am a business function.")
+	slog.Debug("I am a business function.")
 }
 
 func main() {

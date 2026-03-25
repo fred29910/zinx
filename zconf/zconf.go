@@ -173,14 +173,14 @@ func (g *Config) Show() {
 	objVal := reflect.ValueOf(g).Elem()
 	objType := reflect.TypeOf(*g)
 
-	fmt.Println("===== Zinx Global Config =====")
+	slog.Debug("===== Zinx Global Config =====")
 	for i := 0; i < objVal.NumField(); i++ {
 		field := objVal.Field(i)
 		typeField := objType.Field(i)
 
-		fmt.Printf("%s: %v\n", typeField.Name, field.Interface())
+		slog.Debug("config item", "key", typeField.Name, "value", field.Interface())
 	}
-	fmt.Println("==============================")
+	slog.Debug("==============================")
 }
 
 func (g *Config) HeartbeatMaxDuration() time.Duration {

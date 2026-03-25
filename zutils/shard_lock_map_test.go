@@ -1,8 +1,8 @@
 package zutils
 
 import (
-	"fmt"
 	"hash/fnv"
+	"log/slog"
 	"sort"
 	"strconv"
 	"testing"
@@ -339,7 +339,7 @@ func TestUnmarshalJSON(t *testing.T) {
 	}
 
 	for _, shard := range slm.shards {
-		fmt.Printf("%+v \n", shard.items)
+		slog.Debug("shard.items", "items", shard.items)
 	}
 
 }

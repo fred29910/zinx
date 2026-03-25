@@ -1,11 +1,10 @@
 package znet
 
 import (
-	"fmt"
-	"log/slog"
 	"context"
 	"encoding/hex"
 	"errors"
+	"log/slog"
 	"net"
 	"strconv"
 	"sync"
@@ -188,20 +187,20 @@ func newKcpClientConn(client ziface.IClient, conn *kcp.UDPSession) ziface.IConne
 // StartWriter is the goroutine that writes messages to the client
 // (写消息Goroutine， 用户将数据发送给客户端)
 func (c *KcpConnection) StartWriter() {
-	slog.Debug(fmt.Sprintf("Writer Goroutine is running"))
-	defer slog.Debug(fmt.Sprintf("%s [conn Writer exit!]", c.RemoteAddr().String()))
+	slog.Debug("Writer Goroutine is running")
+	defer slog.Debug("[conn Writer exit!]", "RemoteAddr", c.RemoteAddr().String())
 
 	for {
 		select {
 		case data, ok := <-c.msgBuffChan:
 			if ok {
 				if err := c.Send(data); err != nil {
-					slog.Error(fmt.Sprintf("Send Buff Data error:, %s Conn Writer exit", err))
+					slog.Error("Send Buff Data error: Conn Writer exit", "err", err)
 					break
 				}
 
 			} else {
-				slog.Error(fmt.Sprintf("msgBuffChan is Closed"))
+				slog.Error("msgBuffChan is Closed")
 				break
 			}
 		case <-c.ctx.Done():
@@ -213,12 +212,12 @@ func (c *KcpConnection) StartWriter() {
 // StartReader is a goroutine that reads data from the client
 // (读消息Goroutine，用于从客户端中读取数据)
 func (c *KcpConnection) StartReader() {
-	slog.Debug(fmt.Sprintf("[Reader Goroutine is running]"))
-	defer slog.Debug(fmt.Sprintf("%s [conn Reader exit!]", c.RemoteAddr().String()))
+	slog.Debug("[Reader Goroutine is running]")
+	defer slog.Debug("[conn Reader exit!]", "RemoteAddr", c.RemoteAddr().String())
 	defer c.Stop()
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("connID=%d, panic err=%v", c.GetConnID(), err))
+			slog.Error("panic", "connID", c.GetConnID(), "err", err)
 		}
 	}()
 
@@ -234,10 +233,10 @@ func (c *KcpConnection) StartReader() {
 			// (从conn的IO中读取数据到内存缓冲buffer中)
 			n, err := c.conn.Read(buffer)
 			if err != nil {
-				slog.Error(fmt.Sprintf("read msg head [read datalen=%d], error = %s", n, err))
+				slog.Error("read msg head", "datalen", n, "error", err)
 				return
 			}
-			slog.Debug(fmt.Sprintf("read buffer %s \n", hex.EncodeToString(buffer[0:n])))
+			slog.Debug("read buffer", "buffer", hex.EncodeToString(buffer[0:n]))
 
 			// If normal data is read from the peer, update the heartbeat detection Active state
 			// (正常读取到对端数据，更新心跳检测Active状态)
@@ -255,7 +254,7 @@ func (c *KcpConnection) StartReader() {
 					continue
 				}
 				for _, bytes := range bufArrays {
-					// slog.Debug(fmt.Sprintf("read buffer %s \n", hex.EncodeToString(bytes)))
+					// slog.Debug("read buffer", "buffer", hex.EncodeToString(bytes))
 					msg := zpack.NewMessage(uint32(len(bytes)), bytes)
 					// Get the current client's Request data
 					// (得到当前客户端请求的Request数据)
@@ -278,7 +277,7 @@ func (c *KcpConnection) StartReader() {
 func (c *KcpConnection) Start() {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("Connection Start() error: %v", err))
+			slog.Error("Connection Start() error", "err", err)
 		}
 	}()
 	c.ctx, c.cancel = context.WithCancel(context.Background())
@@ -358,7 +357,7 @@ func (c *KcpConnection) Send(data []byte) error {
 
 	_, err := c.conn.Write(data)
 	if err != nil {
-		slog.Error(fmt.Sprintf("SendMsg err data = %+v, err = %+v", data, err))
+		slog.Error("SendMsg err", "data", data, "err", err)
 		return err
 	}
 
@@ -394,7 +393,7 @@ func (c *KcpConnection) SendToQueue(data []byte, opts ...ziface.MsgSendOption) e
 	}
 
 	if data == nil {
-		slog.Error(fmt.Sprintf("Pack data is nil"))
+		slog.Error("Pack data is nil")
 		return errors.New("Pack data is nil")
 	}
 
@@ -416,13 +415,13 @@ func (c *KcpConnection) SendMsg(msgID uint32, data []byte) error {
 	// Pack data and send it
 	msg, err := c.packet.Pack(zpack.NewMsgPackage(msgID, data))
 	if err != nil {
-		slog.Error(fmt.Sprintf("Pack error msg ID = %d", msgID))
+		slog.Error("Pack error", "msgID", msgID)
 		return errors.New("Pack error msg ")
 	}
 
 	err = c.Send(msg)
 	if err != nil {
-		slog.Error(fmt.Sprintf("SendMsg err msg ID = %d, data = %+v, err = %+v", msgID, string(msg), err))
+		slog.Error("SendMsg err", "msgID", msgID, "data", string(msg), "err", err)
 		return err
 	}
 
@@ -455,7 +454,7 @@ func (c *KcpConnection) SendBuffMsg(msgID uint32, data []byte, opts ...ziface.Ms
 
 	msg, err := c.packet.Pack(zpack.NewMsgPackage(msgID, data))
 	if err != nil {
-		slog.Error(fmt.Sprintf("Pack error msg ID = %d", msgID))
+		slog.Error("Pack error", "msgID", msgID)
 		return errors.New("Pack error msg ")
 	}
 
@@ -539,26 +538,26 @@ func (c *KcpConnection) finalizer() {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Error(fmt.Sprintf("Conn finalizer panic: %v", err))
+				slog.Error("Conn finalizer panic", "err", err)
 			}
 		}()
 
 		c.InvokeCloseCallbacks()
 	}()
 
-	slog.Debug(fmt.Sprintf("Conn Stop()...ConnID = %d", c.connID))
+	slog.Debug("Conn Stop()", "ConnID", c.connID)
 }
 
 func (c *KcpConnection) callOnConnStart() {
 	if c.onConnStart != nil {
-		slog.Debug(fmt.Sprintf("ZINX CallOnConnStart...."))
+		slog.Debug("ZINX CallOnConnStart....")
 		c.onConnStart(c)
 	}
 }
 
 func (c *KcpConnection) callOnConnStop() {
 	if c.onConnStop != nil {
-		slog.Debug(fmt.Sprintf("ZINX CallOnConnStop...."))
+		slog.Debug("ZINX CallOnConnStop....")
 		c.onConnStop(c)
 	}
 }

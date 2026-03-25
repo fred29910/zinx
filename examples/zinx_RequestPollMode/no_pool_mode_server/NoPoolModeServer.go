@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/aceld/zinx/v3/zconf"
@@ -19,7 +19,7 @@ func NoPoll1(request ziface.IRequest) {
 func NoPoll2(request ziface.IRequest) {
 	time.Sleep(time.Second * 3)
 	get, _ := request.Get("num")
-	fmt.Printf("num:%v \n", get)
+	slog.Debug("num count", "num", get)
 
 }
 

@@ -25,7 +25,7 @@ func AsyncUserSaveData(request ziface.IRequest) *zasync_op.AsyncOpResult {
 				a := 0
 				b := 1
 				c := b / a
-				fmt.Println(c)
+				slog.Debug("context info", "c", c)
 			*/
 		},
 	)

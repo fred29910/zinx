@@ -1,9 +1,9 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
-	"errors"
 	"strconv"
 
 	"github.com/aceld/zinx/v3/ziface"

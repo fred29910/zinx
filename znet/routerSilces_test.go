@@ -1,7 +1,7 @@
 package znet
 
 import (
-	"fmt"
+	"log/slog"
 	"testing"
 
 	"github.com/aceld/zinx/v3/zconf"
@@ -9,7 +9,7 @@ import (
 )
 
 func A1(request ziface.IRequest) {
-	fmt.Println("我要写入一些上下文到 Request 中了")
+	slog.Debug("我要写入一些上下文到 Request 中了")
 	request.Set("Hey", "zinx!")
 	request.Set("Age", 2)
 }
@@ -17,7 +17,7 @@ func A2(request ziface.IRequest) {
 	name, _ := request.Get("Hey")
 	age, _ := request.Get("Age")
 
-	fmt.Printf("我是练习时长%v年半的%v \n", age, name)
+	slog.Debug("我是练习时长", "age", age, "name", name)
 
 	//如果需要开新协程操作应该 copy
 	cp := request.Copy()
@@ -26,12 +26,12 @@ func A2(request ziface.IRequest) {
 }
 
 func A3(request ziface.IRequest) {
-	fmt.Println("No! 不带我玩")
+	slog.Debug("No! 不带我玩")
 }
 
 func A4(request ziface.IRequest) {
 	// 需要新线程同时也需要上下文的情况
-	fmt.Println(request)
+	slog.Debug("request info", "request", request)
 }
 
 func TestRouterAdd(t *testing.T) {

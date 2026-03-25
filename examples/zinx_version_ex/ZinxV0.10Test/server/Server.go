@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/znet"
@@ -14,13 +15,13 @@ type PingRouter struct {
 
 // Ping Handle
 func (this *PingRouter) Handle(request ziface.IRequest) {
-	fmt.Println("Call PingRouter Handle")
+	slog.Debug("Call PingRouter Handle")
 	//先读取客户端的数据，再回写ping...ping...ping
 	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
 
 	err := request.GetConnection().SendBuffMsg(0, []byte("ping...ping...ping"))
 	if err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 
@@ -30,28 +31,28 @@ type HelloZinxRouter struct {
 
 // HelloZinxRouter Handle
 func (this *HelloZinxRouter) Handle(request ziface.IRequest) {
-	fmt.Println("Call HelloZinxRouter Handle")
+	slog.Debug("Call HelloZinxRouter Handle")
 	//先读取客户端的数据，再回写ping...ping...ping
 	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
 
 	err := request.GetConnection().SendBuffMsg(1, []byte("Hello Zinx Router V0.10"))
 	if err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 
 // 创建连接的时候执行
 func DoConnectionBegin(conn ziface.IConnection) {
-	fmt.Println("DoConnectionBegin is Called ... ")
+	slog.Debug("DoConnectionBegin is Called ... ")
 
 	//设置两个连接属性，在连接创建之后
-	fmt.Println("Set conn Name, Home done!")
+	slog.Debug("Set conn Name, Home done!")
 	conn.SetProperty("Name", "Aceld")
 	conn.SetProperty("Home", "https://www.jianshu.com/u/35261429b7f1")
 
 	err := conn.SendMsg(2, []byte("DoConnection BEGIN..."))
 	if err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 
@@ -59,14 +60,14 @@ func DoConnectionBegin(conn ziface.IConnection) {
 func DoConnectionLost(conn ziface.IConnection) {
 	//在连接销毁之前，查询conn的Name，Home属性
 	if name, err := conn.GetProperty("Name"); err == nil {
-		fmt.Println("Conn Property Name = ", name)
+		slog.Debug("Conn Property Name = ", "value", name)
 	}
 
 	if home, err := conn.GetProperty("Home"); err == nil {
-		fmt.Println("Conn Property Home = ", home)
+		slog.Debug("Conn Property Home = ", "value", home)
 	}
 
-	fmt.Println("DoConneciotnLost is Called ... ")
+	slog.Debug("DoConneciotnLost is Called ... ")
 }
 
 func main() {

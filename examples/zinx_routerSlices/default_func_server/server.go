@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/aceld/zinx/v3/ziface"
@@ -9,7 +10,7 @@ import (
 )
 
 func DefaultTest1(request ziface.IRequest) {
-	fmt.Println("test1")
+	slog.Debug("test1")
 }
 func DefaultTest2(request ziface.IRequest) {
 	time.Sleep(1)

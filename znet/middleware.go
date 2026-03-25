@@ -27,7 +27,7 @@ func RecoveryMiddleware() ziface.HandlerFunc {
 			if err := recover(); err != nil {
 				// Log the panic with stack trace
 				// (记录panic和堆栈信息)
-				slog.Error(fmt.Sprintf("Panic recovered: %v\n%s", err, debug.Stack()))
+				slog.Error("Panic recovered", "err", err, "stack", string(debug.Stack()))
 
 				// Abort the middleware chain
 				// (中止中间件链)
@@ -54,8 +54,7 @@ func LoggingMiddleware() ziface.HandlerFunc {
 		// Log request information after processing
 		// (处理后记录请求信息)
 		latency := time.Since(start)
-		slog.Info(fmt.Sprintf("MessageID: %d, ConnectionID: %d, Latency: %v",
-			c.MsgID, c.Conn.GetConnID(), latency))
+		slog.Info("Request Latency", "MessageID", c.MsgID, "ConnectionID", c.Conn.GetConnID(), "Latency", latency)
 	}
 }
 
@@ -124,7 +123,7 @@ func TraceMiddleware() ziface.HandlerFunc {
 		traceID := fmt.Sprintf("trace-%d-%d", c.Conn.GetConnID(), c.MsgID)
 		c.Set("trace_id", traceID)
 
-		slog.Debug(fmt.Sprintf("Trace started: %s", traceID))
+		slog.Debug("Trace started", "traceID", traceID)
 
 		// Continue to the next middleware
 		// (继续执行下一个中间件)
@@ -132,7 +131,7 @@ func TraceMiddleware() ziface.HandlerFunc {
 
 		// After processing, you could end the span here
 		// (处理后，您可以在这里结束span)
-		slog.Debug(fmt.Sprintf("Trace ended: %s", traceID))
+		slog.Debug("Trace ended", "traceID", traceID)
 	}
 }
 
@@ -177,7 +176,7 @@ func TimeoutMiddleware(timeout time.Duration) ziface.HandlerFunc {
 		case <-time.After(timeout):
 			// Timeout occurred
 			// (发生超时)
-			slog.Error(fmt.Sprintf("Request timeout after %v", timeout))
+			slog.Error("Request timeout", "timeout", timeout)
 			c.Abort()
 		}
 	}

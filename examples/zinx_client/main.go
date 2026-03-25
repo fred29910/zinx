@@ -25,7 +25,7 @@ func business(conn ziface.IConnection) {
 	for {
 		err := conn.SendMsg(100, []byte("Ping...[FromClient]"))
 		if err != nil {
-			fmt.Println(err)
+			slog.Debug("error occurred", "err", err)
 			slog.Error("error", "err", err)
 			break
 		}
@@ -81,7 +81,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 	client.Stop()
 	time.Sleep(time.Second * 2)
 }

@@ -1,11 +1,10 @@
 package znet
 
 import (
-	"fmt"
-	"log/slog"
 	"context"
 	"encoding/hex"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"strconv"
@@ -184,20 +183,20 @@ func newWsClientConn(client ziface.IClient, conn *websocket.Conn) ziface.IConnec
 // StartWriter is a Goroutine that sends messages to the client
 // (StartWriter 写消息Goroutine， 用户将数据发送给客户端)
 func (c *WsConnection) StartWriter() {
-	slog.Info(fmt.Sprintf("Writer Goroutine is running"))
-	defer slog.Info(fmt.Sprintf("%s [conn Writer exit!]", c.RemoteAddr().String()))
+	slog.Info("Writer Goroutine is running")
+	defer slog.Info("[conn Writer exit!]", "RemoteAddr", c.RemoteAddr().String())
 
 	for {
 		select {
 		case data, ok := <-c.msgBuffChan:
 			if ok {
 				if err := c.Send(data); err != nil {
-					slog.Error(fmt.Sprintf("Send Buff Data error:, %s Conn Writer exit", err))
+					slog.Error("Send Buff Data error: Conn Writer exit", "err", err)
 					break
 				}
 
 			} else {
-				slog.Error(fmt.Sprintf("msgBuffChan is Closed"))
+				slog.Error("msgBuffChan is Closed")
 				break
 			}
 		case <-c.ctx.Done():
@@ -209,8 +208,8 @@ func (c *WsConnection) StartWriter() {
 // StartReader is a Goroutine that reads messages from the client.
 // (StartReader 读消息Goroutine，用于从客户端中读取数据)
 func (c *WsConnection) StartReader() {
-	slog.Info(fmt.Sprintf("[Reader Goroutine is running]"))
-	defer slog.Info(fmt.Sprintf("%s [conn Reader exit!]", c.RemoteAddr().String()))
+	slog.Info("[Reader Goroutine is running]")
+	defer slog.Info("[conn Reader exit!]", "RemoteAddr", c.RemoteAddr().String())
 	defer c.Stop()
 
 	// Create a pack-unpack object. (创建拆包解包的对象)
@@ -233,10 +232,10 @@ func (c *WsConnection) StartReader() {
 			}
 			n := len(buffer)
 			if err != nil {
-				slog.Error(fmt.Sprintf("read msg head [read datalen=%d], error = %s", n, err.Error()))
+				slog.Error("read msg head", "datalen", n, "error", err.Error())
 				return
 			}
-			slog.Debug(fmt.Sprintf("read buffer %s \n", hex.EncodeToString(buffer[0:n])))
+			slog.Debug("read buffer", "buffer", hex.EncodeToString(buffer[0:n]))
 
 			// Update the Active status of heartbeat detection normally after reading data from the peer.
 			// (正常读取到对端数据，更新心跳检测Active状态)
@@ -254,7 +253,7 @@ func (c *WsConnection) StartReader() {
 					continue
 				}
 				for _, bytes := range bufArrays {
-					slog.Debug(fmt.Sprintf("read buffer %s \n", hex.EncodeToString(bytes)))
+					slog.Debug("read buffer", "buffer", hex.EncodeToString(bytes))
 					msg := zpack.NewMessage(uint32(len(bytes)), bytes)
 					// Get the Request data requested by the current client.
 					// (得到当前客户端请求的Request数据)
@@ -356,7 +355,7 @@ func (c *WsConnection) Send(data []byte) error {
 
 	err := c.conn.WriteMessage(websocket.BinaryMessage, data)
 	if err != nil {
-		slog.Error(fmt.Sprintf("SendMsg err data = %+v, err = %+v", data, err))
+		slog.Error("SendMsg err", "data", data, "err", err)
 		return err
 	}
 
@@ -392,7 +391,7 @@ func (c *WsConnection) SendToQueue(data []byte, opts ...ziface.MsgSendOption) er
 	}
 
 	if data == nil {
-		slog.Error(fmt.Sprintf("Pack data is nil"))
+		slog.Error("Pack data is nil")
 		return errors.New("Pack data is nil ")
 	}
 
@@ -417,14 +416,14 @@ func (c *WsConnection) SendMsg(msgID uint32, data []byte) error {
 	// (将data封包，并且发送)
 	msg, err := c.packet.Pack(zpack.NewMsgPackage(msgID, data))
 	if err != nil {
-		slog.Error(fmt.Sprintf("Pack error msg ID = %d", msgID))
+		slog.Error("Pack error", "msgID", msgID)
 		return errors.New("Pack error msg ")
 	}
 
 	// Write back to the client
 	err = c.conn.WriteMessage(websocket.BinaryMessage, msg)
 	if err != nil {
-		slog.Error(fmt.Sprintf("SendMsg err msg ID = %d, data = %+v, err = %+v", msgID, string(msg), err))
+		slog.Error("SendMsg err", "msgID", msgID, "data", string(msg), "err", err)
 		return err
 	}
 
@@ -464,7 +463,7 @@ func (c *WsConnection) SendBuffMsg(msgID uint32, data []byte, opts ...ziface.Msg
 	// (将data封包，并且发送)
 	msg, err := c.packet.Pack(zpack.NewMsgPackage(msgID, data))
 	if err != nil {
-		slog.Error(fmt.Sprintf("Pack error msg ID = %d", msgID))
+		slog.Error("Pack error", "msgID", msgID)
 		return errors.New("Pack error msg ")
 	}
 
@@ -553,26 +552,26 @@ func (c *WsConnection) finalizer() {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Error(fmt.Sprintf("Conn finalizer panic: %v", err))
+				slog.Error("Conn finalizer panic", "err", err)
 			}
 		}()
 
 		c.InvokeCloseCallbacks()
 	}()
 
-	slog.Info(fmt.Sprintf("Conn Stop()...ConnID = %d", c.connID))
+	slog.Info("Conn Stop()", "ConnID", c.connID)
 }
 
 func (c *WsConnection) callOnConnStart() {
 	if c.onConnStart != nil {
-		slog.Info(fmt.Sprintf("ZINX CallOnConnStart...."))
+		slog.Info("ZINX CallOnConnStart....")
 		c.onConnStart(c)
 	}
 }
 
 func (c *WsConnection) callOnConnStop() {
 	if c.onConnStop != nil {
-		slog.Info(fmt.Sprintf("ZINX CallOnConnStop...."))
+		slog.Info("ZINX CallOnConnStop....")
 		c.onConnStop(c)
 	}
 }

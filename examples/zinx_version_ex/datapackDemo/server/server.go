@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"io"
+	"log/slog"
 	"net"
 
 	"github.com/aceld/zinx/v3/zpack"
@@ -13,7 +13,7 @@ func main() {
 	//创建socket TCP Server
 	listener, err := net.Listen("tcp", "127.0.0.1:7777")
 	if err != nil {
-		fmt.Println("server listen err:", err)
+		slog.Debug("server listen err:", "err", err)
 		return
 	}
 
@@ -22,7 +22,7 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("server accept err:", err)
+			slog.Debug("server accept err:", "err", err)
 		}
 
 		//处理客户端请求
@@ -34,13 +34,13 @@ func main() {
 				headData := make([]byte, dp.GetHeadLen())
 				_, err := io.ReadFull(conn, headData) //ReadFull 会把msg填充满为止
 				if err != nil {
-					fmt.Println("read head error")
+					slog.Debug("read head error")
 					break
 				}
 				//将headData字节流 拆包到msg中
 				msgHead, err := dp.Unpack(headData)
 				if err != nil {
-					fmt.Println("server unpack err:", err)
+					slog.Debug("server unpack err:", "err", err)
 					return
 				}
 
@@ -52,11 +52,11 @@ func main() {
 					//根据dataLen从io中读取字节流
 					_, err := io.ReadFull(conn, msg.Data)
 					if err != nil {
-						fmt.Println("server unpack data err:", err)
+						slog.Debug("server unpack data err:", "err", err)
 						return
 					}
 
-					fmt.Println("==> Recv Msg: ID=", msg.ID, ", len=", msg.DataLen, ", data=", string(msg.Data))
+					slog.Debug("==> Recv Msg", "ID", msg.ID, "len", msg.DataLen, "data", string(msg.Data))
 				}
 			}
 		}(conn)

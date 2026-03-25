@@ -1,10 +1,10 @@
 package znet
 
 import (
-	"log/slog"
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -145,7 +145,7 @@ func (c *Client) Restart() {
 	c.Add(1)
 	c.Unlock()
 
-	slog.Info(fmt.Sprintf("[START] Zinx Client dial RemoteAddr: %s:%d\n", c.Ip, c.Port))
+	slog.Info("[START] Zinx Client dial RemoteAddr", "Ip", c.Ip, "Port", c.Port)
 	go func() {
 		defer c.Done()
 
@@ -162,7 +162,7 @@ func (c *Client) Restart() {
 			wsConn, _, err := c.dialer.DialContext(c.ctx, wsAddr, c.WsHeader)
 			if err != nil {
 				// connection failed
-				slog.Error(fmt.Sprintf("WsClient connect to server failed, err:%v", err))
+				slog.Error("WsClient connect to server failed", "err", err)
 				c.notifyErr(err)
 				return
 			}
@@ -185,7 +185,7 @@ func (c *Client) Restart() {
 				//conn, err = tls.Dial("tcp", fmt.Sprintf("%v:%v", net.ParseIP(c.Ip), c.Port), config)
 				conn, err = d.DialContext(c.ctx, "tcp", fmt.Sprintf("%v:%v", net.ParseIP(c.Ip), c.Port))
 				if err != nil {
-					slog.Error(fmt.Sprintf("tls client connect to server failed, err:%v", err))
+					slog.Error("tls client connect to server failed", "err", err)
 					c.notifyErr(err)
 					return
 				}
@@ -195,7 +195,7 @@ func (c *Client) Restart() {
 				conn, err = d.DialContext(c.ctx, "tcp", fmt.Sprintf("%v:%v", net.ParseIP(c.Ip), c.Port))
 				if err != nil {
 					// connection failed
-					slog.Error(fmt.Sprintf("client connect to server failed, err:%v", err))
+					slog.Error("client connect to server failed", "err", err)
 					c.notifyErr(err)
 					return
 				}
@@ -207,7 +207,7 @@ func (c *Client) Restart() {
 		// Set connection to the client
 		c.setConn(connect)
 
-		slog.Info(fmt.Sprintf("[START] Zinx Client LocalAddr: %s, RemoteAddr: %s\n", connect.LocalAddr(), connect.RemoteAddr()))
+		slog.Info("[START] Zinx Client", "LocalAddr", connect.LocalAddr(), "RemoteAddr", connect.RemoteAddr())
 		// HeartBeat detection
 		if c.hc != nil {
 			// Bind connection and heartbeat detector after connection is successfully established
@@ -219,7 +219,7 @@ func (c *Client) Restart() {
 		go connect.Start()
 
 		<-c.ctx.Done()
-		slog.Info(fmt.Sprintf("client exit."))
+		slog.Info("client exit.")
 	}()
 }
 
@@ -283,7 +283,7 @@ func (c *Client) Stop() {
 
 	con := c.Conn()
 	if con != nil {
-		slog.Info(fmt.Sprintf("[STOP] Zinx Client LocalAddr: %s, RemoteAddr: %s\n", con.LocalAddr(), con.RemoteAddr()))
+		slog.Info("[STOP] Zinx Client", "LocalAddr", con.LocalAddr(), "RemoteAddr", con.RemoteAddr())
 		con.Stop()
 	}
 

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/zinx_app_demo/mmo_game/core"
@@ -22,7 +22,7 @@ func (*WorldChatApi) Handle(request ziface.IRequest) {
 	msg := &pb.Talk{}
 	err := proto.Unmarshal(request.GetData(), msg)
 	if err != nil {
-		fmt.Println("Talk Unmarshal error ", err)
+		slog.Debug("Talk Unmarshal error ", "err", err)
 		return
 	}
 
@@ -30,7 +30,7 @@ func (*WorldChatApi) Handle(request ziface.IRequest) {
 	// (2. 得知当前的消息是从哪个玩家传递来的,从连接属性pID中获取)
 	pID, err := request.GetConnection().GetProperty("pID")
 	if err != nil {
-		fmt.Println("GetProperty pID error", err)
+		slog.Debug("GetProperty pID error", "err", err)
 		request.GetConnection().Stop()
 		return
 	}

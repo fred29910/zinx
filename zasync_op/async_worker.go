@@ -11,7 +11,6 @@ import (
 	"log/slog"
 )
 
-
 type AsyncWorker struct {
 	taskQ chan func()
 }

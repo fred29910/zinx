@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/aceld/zinx/v3/zdecoder"
 	"github.com/aceld/zinx/v3/ziface"
@@ -14,7 +14,7 @@ import (
 // OnConnectionAdd is a hook function called when a client establishes a connection
 // 当客户端建立连接的时候的hook函数
 func OnConnectionAdd(conn ziface.IConnection) {
-	fmt.Println("=====> OnConnectionAdd is Called ...")
+	slog.Debug("=====> OnConnectionAdd is Called ...")
 	// Create a new player
 	// 创建一个玩家
 	player := core.NewPlayer(conn)
@@ -39,7 +39,7 @@ func OnConnectionAdd(conn ziface.IConnection) {
 	// 同步周边玩家上线信息，与现实周边玩家信息
 	player.SyncSurrounding()
 
-	fmt.Println("=====> Player pIDID = ", player.PID, " arrived ====")
+	slog.Debug("=====> Player arrived ====", "pID", player.PID)
 }
 
 // OnConnectionLost Hook function called when a client disconnects
@@ -63,7 +63,7 @@ func OnConnectionLost(conn ziface.IConnection) {
 		player.LostConnection()
 	}
 
-	fmt.Println("====> Player ", playerID, " left =====")
+	slog.Debug("====> Player left =====", "playerID", playerID)
 
 }
 

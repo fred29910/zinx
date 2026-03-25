@@ -47,7 +47,7 @@ func createShardLockMaps(hash IHash, shardCount int) ShardLockMaps {
 //	m := NewShardLockMaps()
 //	m.Set("key", "value")
 //	if val, ok := m.Get("key"); ok {
-//	    fmt.Println(val)
+//	    slog.Debug("val", "val", val)
 //	}
 func NewShardLockMaps() ShardLockMaps {
 	return createShardLockMaps(DefaultHash(), DefaultShardCount)

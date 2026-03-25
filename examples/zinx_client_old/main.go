@@ -7,8 +7,8 @@
 package main
 
 import (
-	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"time"
 
@@ -18,7 +18,7 @@ import (
 func main() {
 	conn, err := net.Dial("tcp", "127.0.0.1:8999")
 	if err != nil {
-		fmt.Println("client start err, exit!", err)
+		slog.Debug("client start err, exit!", "err", err)
 		return
 	}
 
@@ -27,20 +27,20 @@ func main() {
 		msg, _ := dp.Pack(zpack.NewMsgPackage(100, []byte("ZinxPing")))
 		_, err := conn.Write(msg)
 		if err != nil {
-			fmt.Println("write error err ", err)
+			slog.Debug("write error err ", "err", err)
 			return
 		}
 
 		headData := make([]byte, dp.GetHeadLen())
 		_, err = io.ReadFull(conn, headData)
 		if err != nil {
-			fmt.Println("read head error")
+			slog.Debug("read head error")
 			break
 		}
 
 		msgHead, err := dp.Unpack(headData)
 		if err != nil {
-			fmt.Println("server unpack err:", err)
+			slog.Debug("server unpack err:", "err", err)
 			return
 		}
 
@@ -50,11 +50,11 @@ func main() {
 
 			_, err := io.ReadFull(conn, msg.Data)
 			if err != nil {
-				fmt.Println("server unpack data err:", err)
+				slog.Debug("server unpack data err:", "err", err)
 				return
 			}
 
-			fmt.Println("==> Test Router:[Ping] Recv Msg: ID=", msg.ID, ", len=", msg.DataLen, ", data=", string(msg.Data))
+			slog.Debug("==> Test Router:[Ping] Recv Msg", "ID", msg.ID, "len", msg.DataLen, "data", string(msg.Data))
 		}
 
 		time.Sleep(1 * time.Second)

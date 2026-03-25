@@ -43,9 +43,9 @@
 package zdecoder
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log/slog"
-	"encoding/hex"
 	"math"
 
 	"github.com/aceld/zinx/v3/ziface"

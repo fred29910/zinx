@@ -62,7 +62,7 @@ func (hr *LoginRouter) Handle(request ziface.IRequest) {
 			a := 0
 			b := 1
 			c := b / a
-			fmt.Println(c)
+			slog.Debug("context info", "c", c)
 		*/
 	})
 

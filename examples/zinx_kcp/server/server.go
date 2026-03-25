@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/aceld/zinx/v3/zconf"
@@ -21,30 +21,30 @@ var dealTimes = 0
 func (t *TestRouter) PreHandle(req ziface.IRequest) {
 	start := time.Now()
 
-	fmt.Println("--> Call PreHandle")
+	slog.Debug("--> Call PreHandle")
 	if err := req.GetConnection().SendMsg(0, []byte("test1")); err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 	elapsed := time.Since(start)
-	fmt.Println("cost time：", elapsed)
+	slog.Debug("cost time", "elapsed", elapsed)
 }
 
 // Handle -
 func (t *TestRouter) Handle(req ziface.IRequest) {
-	fmt.Println("--> Call Handle")
+	slog.Debug("--> Call Handle")
 
 	if err := Err(); err != nil {
 		req.Abort()
-		fmt.Println("Insufficient permission")
+		slog.Debug("Insufficient permission")
 	}
 
 	dealTimes++
 	req.GetConnection().AddCloseCallback(nil, nil, func() {
-		fmt.Println("run close callback")
+		slog.Debug("run close callback")
 	})
 
 	if err := req.GetConnection().SendMsg(0, []byte("test2")); err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 
 	if dealTimes == 5 {
@@ -56,9 +56,9 @@ func (t *TestRouter) Handle(req ziface.IRequest) {
 
 // PostHandle -
 func (t *TestRouter) PostHandle(req ziface.IRequest) {
-	fmt.Println("--> Call PostHandle")
+	slog.Debug("--> Call PostHandle")
 	if err := req.GetConnection().SendMsg(0, []byte("test3")); err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 
@@ -82,10 +82,10 @@ func main() {
 	})
 	s.AddRouter(1, &TestRouter{})
 	s.SetOnConnStart(func(conn ziface.IConnection) {
-		fmt.Println("--> OnConnStart")
+		slog.Debug("--> OnConnStart")
 	})
 	s.SetOnConnStop(func(conn ziface.IConnection) {
-		fmt.Println("--> OnConnStop")
+		slog.Debug("--> OnConnStop")
 	})
 	s.Serve()
 }

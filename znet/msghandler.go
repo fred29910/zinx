@@ -1,9 +1,9 @@
 package znet
 
 import (
-	"log/slog"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/aceld/zinx/v3/zconf"
@@ -71,7 +71,7 @@ func newMsgHandle() *MsgHandle {
 	TaskQueueLen := zconf.GlobalObject.WorkerPoolSize
 
 	if zconf.GlobalObject.WorkerMode == zconf.WorkerModeDynamicBind {
-		slog.Debug(fmt.Sprintf("WorkerMode = %s", zconf.WorkerModeDynamicBind))
+		slog.Debug("WorkerMode", "mode", zconf.WorkerModeDynamicBind)
 		freeWorkers = make(map[uint32]struct{}, zconf.GlobalObject.WorkerPoolSize)
 		for i := uint32(0); i < zconf.GlobalObject.WorkerPoolSize; i++ {
 			freeWorkers[i] = struct{}{}
@@ -126,7 +126,7 @@ func newCliMsgHandle() *MsgHandle {
 	TaskQueueLen := zconf.GlobalObject.WorkerPoolSize
 
 	if zconf.GlobalObject.WorkerMode == zconf.WorkerModeDynamicBind {
-		slog.Debug(fmt.Sprintf("WorkerMode = %s", zconf.WorkerModeDynamicBind))
+		slog.Debug("WorkerMode", "mode", zconf.WorkerModeDynamicBind)
 		freeWorkers = make(map[uint32]struct{}, zconf.GlobalObject.WorkerPoolSize)
 		for i := uint32(0); i < zconf.GlobalObject.WorkerPoolSize; i++ {
 			freeWorkers[i] = struct{}{}
@@ -167,7 +167,7 @@ func useWorker(conn ziface.IConnection) uint32 {
 
 	mh, _ := conn.GetMsgHandler().(*MsgHandle)
 	if mh == nil {
-		slog.Error(fmt.Sprintf("useWorker failed, mh is nil"))
+		slog.Error("useWorker failed, mh is nil")
 		return 0
 	}
 
@@ -196,7 +196,7 @@ func useWorker(conn ziface.IConnection) uint32 {
 		mh.extraFreeWorkerMu.Lock()
 		defer mh.extraFreeWorkerMu.Unlock()
 		for workerID := range mh.extraFreeWorkers {
-			slog.Debug(fmt.Sprintf("start extra worker, workerID=%d", workerID))
+			slog.Debug("start extra worker", "workerID", workerID)
 			mh.TaskQueue[workerID] = make(chan ziface.IRequest, zconf.GlobalObject.MaxWorkerTaskLen)
 			go mh.StartOneWorker(int(workerID), mh.TaskQueue[workerID])
 			return workerID
@@ -224,7 +224,7 @@ func useWorker(conn ziface.IConnection) uint32 {
 func freeWorker(conn ziface.IConnection) {
 	mh, _ := conn.GetMsgHandler().(*MsgHandle)
 	if mh == nil {
-		slog.Error(fmt.Sprintf("useWorker failed, mh is nil"))
+		slog.Error("useWorker failed, mh is nil")
 		return
 	}
 
@@ -301,17 +301,17 @@ func (mh *MsgHandle) AddInterceptor(interceptor ziface.IInterceptor) {
 // (将消息交给TaskQueue,由worker进行处理)
 func (mh *MsgHandle) SendMsgToTaskQueue(request ziface.IRequest) {
 	workerID := request.GetConnection().GetWorkerID()
-	// slog.Debug(fmt.Sprintf("Add ConnID=%d request msgID=%d to workerID=%d", request.GetConnection().GetConnID(), request.GetMsgID(), workerID))
+	// slog.Debug("Add request to worker", "ConnID", request.GetConnection().GetConnID(), "msgID", request.GetMsgID(), "workerID", workerID)
 	// Send the request message to the task queue
 	mh.TaskQueue[workerID] <- request
-	slog.Debug(fmt.Sprintf("SendMsgToTaskQueue-->%s", hex.EncodeToString(request.GetData())))
+	slog.Debug("SendMsgToTaskQueue", "data", hex.EncodeToString(request.GetData()))
 }
 
 // doFuncHandler handles functional requests (执行函数式请求)
 func (mh *MsgHandle) doFuncHandler(request ziface.IFuncRequest, workerID int) {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("workerID: %d doFuncRequest panic: %v", workerID, err))
+			slog.Error("doFuncRequest panic", "workerID", workerID, "err", err)
 		}
 	}()
 	// Execute the functional request (执行函数式请求)
@@ -323,7 +323,7 @@ func (mh *MsgHandle) doFuncHandler(request ziface.IFuncRequest, workerID int) {
 func (mh *MsgHandle) doMsgHandler(request ziface.IRequest, workerID int) {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("workerID: %d doMsgHandler panic: %v", workerID, err))
+			slog.Error("doMsgHandler panic", "workerID", workerID, "err", err)
 		}
 	}()
 
@@ -331,7 +331,7 @@ func (mh *MsgHandle) doMsgHandler(request ziface.IRequest, workerID int) {
 	handler, ok := mh.Apis[msgId]
 
 	if !ok {
-		slog.Error(fmt.Sprintf("api msgID = %d is not FOUND!", request.GetMsgID()))
+		slog.Error("api not FOUND", "msgID", request.GetMsgID())
 		return
 	}
 
@@ -364,7 +364,7 @@ func (mh *MsgHandle) AddRouter(msgID uint32, router ziface.IRouter) {
 	// 2. Add the binding relationship between msg and API
 	// (添加msg与api的绑定关系)
 	mh.Apis[msgID] = router
-	slog.Info(fmt.Sprintf("Add Router msgID = %d", msgID))
+	slog.Info("Add Router", "msgID", msgID)
 }
 
 // AddRouterSlices adds router handlers using slices
@@ -386,14 +386,14 @@ func (mh *MsgHandle) Use(Handlers ...ziface.RouterHandler) ziface.IRouterSlices 
 func (mh *MsgHandle) doMsgHandlerSlices(request ziface.IRequest, workerID int) {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("workerID: %d doMsgHandler panic: %v", workerID, err))
+			slog.Error("doMsgHandler panic", "workerID", workerID, "err", err)
 		}
 	}()
 
 	msgId := request.GetMsgID()
 	handlers, ok := mh.RouterSlices.GetHandlers(msgId)
 	if !ok {
-		slog.Error(fmt.Sprintf("api msgID = %d is not FOUND!", request.GetMsgID()))
+		slog.Error("api not FOUND", "msgID", request.GetMsgID())
 		return
 	}
 
@@ -404,7 +404,7 @@ func (mh *MsgHandle) doMsgHandlerSlices(request ziface.IRequest, workerID int) {
 }
 
 func (mh *MsgHandle) StopOneWorker(workerID int) {
-	slog.Debug(fmt.Sprintf("stop Worker ID = %d ", workerID))
+	slog.Debug("stop Worker", "workerID", workerID)
 	// Stop the worker by closing the corresponding taskQueue
 	// (停止一个Worker，通过关闭对应的taskQueue)
 	close(mh.TaskQueue[workerID])
@@ -413,7 +413,7 @@ func (mh *MsgHandle) StopOneWorker(workerID int) {
 // StartOneWorker starts a worker workflow
 // (启动一个Worker工作流程)
 func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest) {
-	slog.Debug(fmt.Sprintf("Worker ID = %d is started.", workerID))
+	slog.Debug("Worker started", "workerID", workerID)
 	// Continuously wait for messages in the queue
 	// (不断地等待队列中的消息)
 	for {
@@ -424,7 +424,7 @@ func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest
 			if !ok {
 				// DynamicBind Mode, destroy current worker by close the taskQueue
 				// (DynamicBind模式下，临时创建的worker, 是通过关闭taskQueue 来销毁当前worker)
-				slog.Error(fmt.Sprintf(" taskQueue is closed, Worker ID = %d quit", workerID))
+				slog.Error("taskQueue is closed, Worker quit", "workerID", workerID)
 				return
 			}
 			switch req := request.(type) {
@@ -487,14 +487,14 @@ func (mh *MsgHandle) GroupContext(start, end uint32, Handlers ...ziface.HandlerF
 func (mh *MsgHandle) doMsgHandlerSlicesContext(request ziface.IRequest, workerID int) {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("workerID: %d doMsgHandlerSlicesContext panic: %v", workerID, err))
+			slog.Error("doMsgHandlerSlicesContext panic", "workerID", workerID, "err", err)
 		}
 	}()
 
 	msgId := request.GetMsgID()
 	handlers, ok := mh.RouterSlicesContext.GetHandlers(msgId)
 	if !ok {
-		slog.Error(fmt.Sprintf("api msgID = %d is not FOUND!", request.GetMsgID()))
+		slog.Error("api not FOUND", "msgID", request.GetMsgID())
 		return
 	}
 

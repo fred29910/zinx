@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 
 	"github.com/aceld/zinx/v3/examples/zinx_version_ex/protoDemo/pb"
 	"github.com/golang/protobuf/proto"
@@ -31,7 +32,7 @@ func main() {
 
 	data, err := proto.Marshal(person)
 	if err != nil {
-		fmt.Println("marshal err:", err)
+		slog.Debug("marshal err:", "err", err)
 	}
 
 	fmt.Println(hex.EncodeToString(data))
@@ -39,7 +40,7 @@ func main() {
 	newdata := &pb.Person{}
 	err = proto.Unmarshal(data, newdata)
 	if err != nil {
-		fmt.Println("unmarshal err:", err)
+		slog.Debug("unmarshal err:", "err", err)
 	}
 	fmt.Println(newdata)
 }

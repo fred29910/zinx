@@ -8,16 +8,16 @@
 package ztimer
 
 import (
-	"fmt"
+	"log/slog"
 	"testing"
 )
 
 func SayHello(message ...interface{}) {
-	fmt.Println(message[0].(string), " ", message[1].(string))
+	slog.Debug("delay message", "msg0", message[0].(string), "msg1", message[1].(string))
 }
 
 func TestDelayfunc(t *testing.T) {
 	df := NewDelayFunc(SayHello, []interface{}{"hello", "zinx!"})
-	fmt.Println("df.String() = ", df.String())
+	slog.Debug("df.String()", "value", df.String())
 	df.Call()
 }

@@ -6,10 +6,9 @@ package ztimer
 * @Mail: danbing.at@gmail.com
  */
 import (
-	"log/slog"
 	"fmt"
+	"log/slog"
 	"reflect"
-
 )
 
 /*

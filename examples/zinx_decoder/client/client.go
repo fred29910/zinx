@@ -47,13 +47,13 @@ func getTLVData(index int) []byte {
 	// (此处模拟顺序如:两包一包半剩下的半包)
 	index = index % 3
 	if index == 0 {
-		fmt.Println("Simulation-Data - Sticking (粘包)")
+		slog.Debug("Simulation-Data - Sticking (粘包)")
 		index = 2 //Simulate a situation of packet sticking, where two packets of data are combined together. (模拟粘包情况，两包数据一起)
 	} else {
 		// Simulate the situation of message fragmentation, with one and a half packages and the remaining half package
 		// (模拟断包情况，一包半+剩下的半包)
 		index = index / 2 % 2
-		fmt.Println("Simulation-Data - Fragmentation(断包)")
+		slog.Debug("Simulation-Data - Fragmentation(断包)")
 	}
 	arr, _ := hex.DecodeString(tlvPackData[index])
 	return arr
@@ -72,13 +72,13 @@ func getHTLVCRCData(index int) []byte {
 	// (此处模拟顺序如:两包一包半剩下的半包)
 	index = index % 3
 	if index == 0 {
-		fmt.Println("Simulation-Data - Sticking (粘包)")
+		slog.Debug("Simulation-Data - Sticking (粘包)")
 		index = 2 //Simulate a situation of packet sticking, where two packets of data are combined together. (模拟粘包情况，两包数据一起)
 	} else {
 		// Simulate the situation of message fragmentation, with one and a half packages and the remaining half package
 		// (模拟断包情况，一包半+剩下的半包)
 		index = index / 2 % 2
-		fmt.Println("Simulation-Data - Fragmentation(断包)")
+		slog.Debug("Simulation-Data - Fragmentation(断包)")
 	}
 	arr, _ := hex.DecodeString(tlvPackData[index])
 	return arr
@@ -112,6 +112,6 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 
 }

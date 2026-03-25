@@ -27,7 +27,7 @@ func business(conn ziface.IConnection) {
 	for {
 		err := conn.SendMsg(1, []byte("ping ping ping ..."))
 		if err != nil {
-			fmt.Println(err)
+			slog.Debug("error occurred", "err", err)
 
 		}
 		time.Sleep(1 * time.Second)
@@ -47,7 +47,7 @@ func wait() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 }
 
 func main() {
@@ -71,7 +71,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 	// Clean up the client.(清理客户端)
 	client.Stop()
 	time.Sleep(time.Second * 2)

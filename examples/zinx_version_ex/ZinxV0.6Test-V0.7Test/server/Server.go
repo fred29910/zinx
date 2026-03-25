@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/znet"
@@ -14,13 +15,13 @@ type PingRouter struct {
 
 // Ping Handle
 func (this *PingRouter) Handle(request ziface.IRequest) {
-	fmt.Println("Call PingRouter Handle")
+	slog.Debug("Call PingRouter Handle")
 	//先读取客户端的数据，再回写ping...ping...ping
 	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
 
 	err := request.GetConnection().SendMsg(0, []byte("ping...ping...ping"))
 	if err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 
@@ -30,13 +31,13 @@ type HelloZinxRouter struct {
 
 // HelloZinxRouter Handle
 func (this *HelloZinxRouter) Handle(request ziface.IRequest) {
-	fmt.Println("Call HelloZinxRouter Handle")
+	slog.Debug("Call HelloZinxRouter Handle")
 	//先读取客户端的数据，再回写ping...ping...ping
 	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
 
 	err := request.GetConnection().SendMsg(1, []byte("Hello Zinx Router V0.6"))
 	if err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 

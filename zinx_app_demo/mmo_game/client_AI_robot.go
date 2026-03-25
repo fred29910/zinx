@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log/slog"
 	"math/rand"
 	"net"
 	"runtime"
@@ -83,7 +84,7 @@ func (this *TcpClient) SendMsg(msgID uint32, data proto.Message) {
 	// 进行编码
 	binaryData, err := proto.Marshal(data)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("marshaling error:  %s", err))
+		slog.Debug("marshaling error:  %s", "arg", err)
 		return
 	}
 
@@ -91,7 +92,7 @@ func (this *TcpClient) SendMsg(msgID uint32, data proto.Message) {
 	if err == nil {
 		_, _ = this.conn.Write(sendData)
 	} else {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 
 	return
@@ -151,7 +152,7 @@ func (this *TcpClient) AIRobotAction() {
 			V: v,
 		}
 
-		fmt.Println(fmt.Sprintf("player ID: %d. Walking...", this.PID))
+		slog.Debug("player ID: %d. Walking...", "arg", this.PID)
 		//发送移动MsgID:3的指令
 		this.SendMsg(3, msg)
 	}
@@ -162,7 +163,7 @@ func (this *TcpClient) AIRobotAction() {
 */
 func (this *TcpClient) DoMsg(msg *Message) {
 	//处理消息
-	fmt.Println(fmt.Sprintf("msg ID :%d, data len: %d", msg.MsgID, msg.Len))
+	slog.Debug("msg ID :%d, data len: %d", "arg", msg.MsgID, msg.Len)
 	if msg.MsgID == 1 {
 		//服务器回执给客户端 分配ID
 
@@ -187,13 +188,13 @@ func (this *TcpClient) DoMsg(msg *Message) {
 			this.Y = bdata.GetP().Y
 			this.Z = bdata.GetP().Z
 			this.V = bdata.GetP().V
-			fmt.Println(fmt.Sprintf("player ID: %d online.. at(%f,%f,%f,%f)", bdata.PID, this.X, this.Y, this.Z, this.V))
+			slog.Debug("player ID: %d online.. at(%f,%f,%f,%f)", "arg", bdata.PID, this.X, this.Y, this.Z, this.V)
 
 			//玩家已经成功上线
 			this.isOnline <- true
 
 		} else if bdata.Tp == 1 {
-			fmt.Println(fmt.Sprintf("世界聊天,玩家%d说的话是: %s", bdata.PID, bdata.GetContent()))
+			slog.Debug("世界聊天,玩家%d说的话是: %s", "arg", bdata.PID, bdata.GetContent())
 		}
 	}
 }
@@ -207,7 +208,7 @@ func (this *TcpClient) Start() {
 			headData := make([]byte, 8)
 
 			if _, err := io.ReadFull(this.conn, headData); err != nil {
-				fmt.Println(err)
+				slog.Debug("error occurred", "err", err)
 				return
 			}
 			pkgHead, err := this.Unpack(headData)
@@ -248,7 +249,7 @@ func NewTcpClient(ip string, port int) *TcpClient {
 	addrStr := fmt.Sprintf("%s:%d", ip, port)
 	conn, err := net.Dial("tcp", addrStr)
 	if err != nil {
-		fmt.Println("net.Dial err: ", err)
+		slog.Debug("net.Dial err: ", "err", err)
 		panic(err)
 	}
 
@@ -262,7 +263,7 @@ func NewTcpClient(ip string, port int) *TcpClient {
 		isOnline: make(chan bool),
 	}
 
-	fmt.Println(fmt.Sprintf("conn: %+v. Connected to server...", conn))
+	slog.Debug("conn: %+v. Connected to server...", "arg", conn)
 
 	return client
 }
@@ -298,9 +299,9 @@ func main() {
 		}
 	}()
 
-	fmt.Println("AI robot start")
+	slog.Debug("AI robot start")
 	wg.Wait()
 
-	fmt.Println("AI robot exit")
+	slog.Debug("AI robot exit")
 	select {}
 }

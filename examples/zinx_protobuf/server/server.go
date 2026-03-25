@@ -3,8 +3,6 @@ package main
 import (
 	"log/slog"
 
-	"fmt"
-
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/zinx_app_demo/mmo_game/pb"
 	"github.com/aceld/zinx/v3/znet"
@@ -21,11 +19,11 @@ func (this *PositionServerRouter) Handle(request ziface.IRequest) {
 	msg := &pb.Position{}
 	err := proto.Unmarshal(request.GetData(), msg)
 	if err != nil {
-		fmt.Println("Position Unmarshal error ", err, " data = ", request.GetData())
+		slog.Error("Position Unmarshal error", "err", err, "data", request.GetData())
 		return
 	}
 
-	fmt.Printf("recv from client : msgId=%+v, data=%+v\n", request.GetMsgID(), msg)
+	slog.Debug("recv from client", "msgId", request.GetMsgID(), "data", msg)
 
 	msg.X += 1
 	msg.Y += 1
@@ -34,7 +32,7 @@ func (this *PositionServerRouter) Handle(request ziface.IRequest) {
 
 	data, err := proto.Marshal(msg)
 	if err != nil {
-		fmt.Println("proto Marshal error = ", err, " msg = ", msg)
+		slog.Error("proto Marshal error", "err", err, "msg", msg)
 		return
 	}
 

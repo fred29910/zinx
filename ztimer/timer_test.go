@@ -8,14 +8,14 @@
 package ztimer
 
 import (
-	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 )
 
 // 定义一个超时函数
 func myFunc(v ...interface{}) {
-	fmt.Printf("No.%d function calld. delay %d second(s)\n", v[0].(int), v[1].(int))
+	slog.Debug("function called", "No", v[0].(int), "delay_sec", v[1].(int))
 }
 
 func TestTimer(t *testing.T) {

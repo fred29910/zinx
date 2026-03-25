@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/ziface"
@@ -9,22 +9,22 @@ import (
 )
 
 func Test1(request ziface.IRequest) {
-	fmt.Println("test1")
+	slog.Debug("test1")
 }
 func Test2(request ziface.IRequest) {
-	fmt.Println("Test2")
+	slog.Debug("Test2")
 }
 func Test3(request ziface.IRequest) {
-	fmt.Println("Test3")
+	slog.Debug("Test3")
 }
 func Test4(request ziface.IRequest) {
-	fmt.Println("Test4")
+	slog.Debug("Test4")
 }
 func Test5(request ziface.IRequest) {
-	fmt.Println("Test5")
+	slog.Debug("Test5")
 }
 func Test6(request ziface.IRequest) {
-	fmt.Println("Test6")
+	slog.Debug("Test6")
 }
 
 type router struct {
@@ -32,14 +32,14 @@ type router struct {
 }
 
 func (r *router) PreHandle(req ziface.IRequest) {
-	fmt.Println(" hello router1")
+	slog.Debug(" hello router1")
 }
 func (r *router) Handle(req ziface.IRequest) {
 	req.Abort()
-	fmt.Println(" hello router2")
+	slog.Debug(" hello router2")
 }
 func (r *router) PostHandle(req ziface.IRequest) {
-	fmt.Println(" hello router3")
+	slog.Debug(" hello router3")
 }
 
 func main() {

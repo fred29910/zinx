@@ -1,13 +1,13 @@
 package core
 
 import (
-	"fmt"
+	"log/slog"
 	"testing"
 )
 
 func TestNewAOIManager(t *testing.T) {
 	aoiMgr := NewAOIManager(100, 300, 4, 200, 450, 5)
-	fmt.Println(aoiMgr)
+	slog.Debug("aoiMgr info", "aoiMgr", aoiMgr)
 }
 
 func TestAOIManagerSuroundGrIDsByGID(t *testing.T) {
@@ -20,11 +20,11 @@ func TestAOIManagerSuroundGrIDsByGID(t *testing.T) {
 
 		// Get all IDs of the surrounding nine grids
 		// (得到九宫格所有的IDs)
-		fmt.Println("gID : ", k, " grIDs len = ", len(grIDs))
+		slog.Debug("gID info", "gID", k, "grIDs len", len(grIDs))
 		gIDs := make([]int, 0, len(grIDs))
 		for _, grID := range grIDs {
 			gIDs = append(gIDs, grID.GID)
 		}
-		fmt.Printf("grID ID: %d, surrounding grID IDs are %v\n", k, gIDs)
+		slog.Debug("grID info", "grID", k, "gIDs", gIDs)
 	}
 }

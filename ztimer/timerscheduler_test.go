@@ -9,17 +9,16 @@ package ztimer
  */
 
 import (
-	"log/slog"
 	"fmt"
 	"log"
+	"log/slog"
 	"testing"
 	"time"
-
 )
 
 // 触发函数
 func foo(args ...interface{}) {
-	fmt.Printf("I am No. %d function, delay %d ms\n", args[0].(int), args[1].(int))
+	slog.Debug("executed function", "No", args[0].(int), "delay_ms", args[1].(int))
 }
 
 // 手动创建调度器运转时间轮

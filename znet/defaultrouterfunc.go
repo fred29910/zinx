@@ -1,9 +1,9 @@
 package znet
 
 import (
-	"log/slog"
 	"bytes"
 	"fmt"
+	"log/slog"
 	"path"
 	"runtime"
 	"strings"
@@ -34,9 +34,9 @@ func RouterRecovery(request ziface.IRequest) {
 		if err := recover(); err != nil {
 			panicInfo := getInfo(StackBegin)
 			// Record the error
-			slog.Error(fmt.Sprintf("MsgId:%d Handler panic: info:%s err:%v", request.GetMsgID(), panicInfo, err))
+			slog.Error("Handler panic", "MsgId", request.GetMsgID(), "info", panicInfo, "err", err)
 
-			//fmt.Printf("MsgId:%d Handler panic: info:%s err:%v", request.GetMsgID(), panicInfo, err)
+			// slog.Error("Handler panic", "MsgId", request.GetMsgID(), "info", panicInfo, "err", err)
 
 			// Should return an error (应该回传一个错误的)
 			//request.GetConnection().SendMsg()
@@ -52,7 +52,7 @@ func RouterTime(request ziface.IRequest) {
 	now := time.Now()
 	request.RouterSlicesNext()
 	duration := time.Since(now)
-	fmt.Println(duration.String())
+	slog.Debug("duration", "time", duration.String())
 }
 
 func getInfo(ship int) (infoStr string) {

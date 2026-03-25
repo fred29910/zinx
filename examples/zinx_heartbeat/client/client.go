@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/aceld/zinx/v3/ziface"
@@ -17,7 +17,7 @@ func myClientHeartBeatMsg(conn ziface.IConnection) []byte {
 // User-defined handling method for remote connection not alive.
 // 用户自定义的远程连接不存活时的处理方法
 func myClientOnRemoteNotAlive(conn ziface.IConnection) {
-	fmt.Println("myClientOnRemoteNotAlive is Called, connID=", conn.GetConnID(), "remoteAddr = ", conn.RemoteAddr())
+	slog.Debug("myClientOnRemoteNotAlive is Called", "connID", conn.GetConnID(), "remoteAddr", conn.RemoteAddr())
 	//关闭连接
 	conn.Stop()
 }
@@ -28,7 +28,7 @@ type myClientHeartBeatRouter struct {
 }
 
 func (r *myClientHeartBeatRouter) Handle(request ziface.IRequest) {
-	fmt.Println("in myClientHeartBeatRouter Handle, recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
+	slog.Debug("in myClientHeartBeatRouter Handle", "msgId", request.GetMsgID(), "data", string(request.GetData()))
 }
 
 func main() {
