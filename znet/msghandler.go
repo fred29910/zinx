@@ -3,11 +3,11 @@ package znet
 import (
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"sync"
 
-	"github.com/aceld/zinx/zconf"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
+	"github.com/aceld/zinx/v3/zconf"
+	"github.com/aceld/zinx/v3/ziface"
 )
 
 const (
@@ -45,8 +45,9 @@ type MsgHandle struct {
 
 	// Chain builder for the responsibility chain
 	// (责任链构造器)
-	builder      *chainBuilder
-	RouterSlices *RouterSlices
+	builder             *chainBuilder
+	RouterSlices        *RouterSlices
+	RouterSlicesContext *RouterSlicesContext
 }
 
 // newMsgHandle creates MsgHandle
@@ -70,7 +71,7 @@ func newMsgHandle() *MsgHandle {
 	TaskQueueLen := zconf.GlobalObject.WorkerPoolSize
 
 	if zconf.GlobalObject.WorkerMode == zconf.WorkerModeDynamicBind {
-		zlog.Ins().DebugF("WorkerMode = %s", zconf.WorkerModeDynamicBind)
+		slog.Debug("WorkerMode", "mode", zconf.WorkerModeDynamicBind)
 		freeWorkers = make(map[uint32]struct{}, zconf.GlobalObject.WorkerPoolSize)
 		for i := uint32(0); i < zconf.GlobalObject.WorkerPoolSize; i++ {
 			freeWorkers[i] = struct{}{}
@@ -84,10 +85,11 @@ func newMsgHandle() *MsgHandle {
 	}
 
 	handle := &MsgHandle{
-		Apis:         make(map[uint32]ziface.IRouter),
-		RouterSlices: NewRouterSlices(),
-		freeWorkers:  freeWorkers,
-		builder:      newChainBuilder(),
+		Apis:                make(map[uint32]ziface.IRouter),
+		RouterSlices:        NewRouterSlices(),
+		RouterSlicesContext: NewRouterSlicesContext(),
+		freeWorkers:         freeWorkers,
+		builder:             newChainBuilder(),
 		// 可额外临时分配的workerID集合
 		extraFreeWorkers: extraFreeWorkers,
 	}
@@ -124,7 +126,7 @@ func newCliMsgHandle() *MsgHandle {
 	TaskQueueLen := zconf.GlobalObject.WorkerPoolSize
 
 	if zconf.GlobalObject.WorkerMode == zconf.WorkerModeDynamicBind {
-		zlog.Ins().DebugF("WorkerMode = %s", zconf.WorkerModeDynamicBind)
+		slog.Debug("WorkerMode", "mode", zconf.WorkerModeDynamicBind)
 		freeWorkers = make(map[uint32]struct{}, zconf.GlobalObject.WorkerPoolSize)
 		for i := uint32(0); i < zconf.GlobalObject.WorkerPoolSize; i++ {
 			freeWorkers[i] = struct{}{}
@@ -138,10 +140,11 @@ func newCliMsgHandle() *MsgHandle {
 	}
 
 	handle := &MsgHandle{
-		Apis:         make(map[uint32]ziface.IRouter),
-		RouterSlices: NewRouterSlices(),
-		freeWorkers:  freeWorkers,
-		builder:      newChainBuilder(),
+		Apis:                make(map[uint32]ziface.IRouter),
+		RouterSlices:        NewRouterSlices(),
+		RouterSlicesContext: NewRouterSlicesContext(),
+		freeWorkers:         freeWorkers,
+		builder:             newChainBuilder(),
 		// 可额外临时分配的workerID集合
 		extraFreeWorkers: extraFreeWorkers,
 	}
@@ -164,7 +167,7 @@ func useWorker(conn ziface.IConnection) uint32 {
 
 	mh, _ := conn.GetMsgHandler().(*MsgHandle)
 	if mh == nil {
-		zlog.Ins().ErrorF("useWorker failed, mh is nil")
+		slog.Error("useWorker failed, mh is nil")
 		return 0
 	}
 
@@ -193,7 +196,7 @@ func useWorker(conn ziface.IConnection) uint32 {
 		mh.extraFreeWorkerMu.Lock()
 		defer mh.extraFreeWorkerMu.Unlock()
 		for workerID := range mh.extraFreeWorkers {
-			zlog.Ins().DebugF("start extra worker, workerID=%d", workerID)
+			slog.Debug("start extra worker", "workerID", workerID)
 			mh.TaskQueue[workerID] = make(chan ziface.IRequest, zconf.GlobalObject.MaxWorkerTaskLen)
 			go mh.StartOneWorker(int(workerID), mh.TaskQueue[workerID])
 			return workerID
@@ -221,7 +224,7 @@ func useWorker(conn ziface.IConnection) uint32 {
 func freeWorker(conn ziface.IConnection) {
 	mh, _ := conn.GetMsgHandler().(*MsgHandle)
 	if mh == nil {
-		zlog.Ins().ErrorF("useWorker failed, mh is nil")
+		slog.Error("useWorker failed, mh is nil")
 		return
 	}
 
@@ -255,9 +258,8 @@ func freeWorker(conn ziface.IConnection) {
 func (mh *MsgHandle) Intercept(chain ziface.IChain) ziface.IcResp {
 	request := chain.Request()
 	if request != nil {
-		switch request.(type) {
+		switch iRequest := request.(type) {
 		case ziface.IRequest:
-			iRequest := request.(ziface.IRequest)
 			if mh.WorkerPoolSize > 0 {
 				// If the worker pool mechanism has been started, hand over the message to the worker for processing
 				// (已经启动工作池机制，将消息交给Worker处理)
@@ -268,8 +270,16 @@ func (mh *MsgHandle) Intercept(chain ziface.IChain) ziface.IcResp {
 				// (从绑定好的消息和对应的处理方法中执行对应的Handle方法)
 				if !zconf.GlobalObject.RouterSlicesMode {
 					go mh.doMsgHandler(iRequest, WorkerIDWithoutWorkerPool)
-				} else if zconf.GlobalObject.RouterSlicesMode {
-					go mh.doMsgHandlerSlices(iRequest, WorkerIDWithoutWorkerPool)
+				} else {
+					mh.RouterSlicesContext.RLock()
+					useContext := len(mh.RouterSlicesContext.Apis) > 0 || len(mh.RouterSlicesContext.Handlers) > 0
+					mh.RouterSlicesContext.RUnlock()
+
+					if useContext {
+						go mh.doMsgHandlerSlicesContext(iRequest, WorkerIDWithoutWorkerPool)
+					} else {
+						go mh.doMsgHandlerSlices(iRequest, WorkerIDWithoutWorkerPool)
+					}
 				}
 
 			}
@@ -298,17 +308,17 @@ func (mh *MsgHandle) AddInterceptor(interceptor ziface.IInterceptor) {
 // (将消息交给TaskQueue,由worker进行处理)
 func (mh *MsgHandle) SendMsgToTaskQueue(request ziface.IRequest) {
 	workerID := request.GetConnection().GetWorkerID()
-	// zlog.Ins().DebugF("Add ConnID=%d request msgID=%d to workerID=%d", request.GetConnection().GetConnID(), request.GetMsgID(), workerID)
+	// slog.Debug("Add request to worker", "ConnID", request.GetConnection().GetConnID(), "msgID", request.GetMsgID(), "workerID", workerID)
 	// Send the request message to the task queue
 	mh.TaskQueue[workerID] <- request
-	zlog.Ins().DebugF("SendMsgToTaskQueue-->%s", hex.EncodeToString(request.GetData()))
+	slog.Debug("SendMsgToTaskQueue", "data", hex.EncodeToString(request.GetData()))
 }
 
 // doFuncHandler handles functional requests (执行函数式请求)
 func (mh *MsgHandle) doFuncHandler(request ziface.IFuncRequest, workerID int) {
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Ins().ErrorF("workerID: %d doFuncRequest panic: %v", workerID, err)
+			slog.Error("doFuncRequest panic", "workerID", workerID, "err", err)
 		}
 	}()
 	// Execute the functional request (执行函数式请求)
@@ -320,7 +330,7 @@ func (mh *MsgHandle) doFuncHandler(request ziface.IFuncRequest, workerID int) {
 func (mh *MsgHandle) doMsgHandler(request ziface.IRequest, workerID int) {
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Ins().ErrorF("workerID: %d doMsgHandler panic: %v", workerID, err)
+			slog.Error("doMsgHandler panic", "workerID", workerID, "err", err)
 		}
 	}()
 
@@ -328,7 +338,7 @@ func (mh *MsgHandle) doMsgHandler(request ziface.IRequest, workerID int) {
 	handler, ok := mh.Apis[msgId]
 
 	if !ok {
-		zlog.Ins().ErrorF("api msgID = %d is not FOUND!", request.GetMsgID())
+		slog.Error("api not FOUND", "msgID", request.GetMsgID())
 		return
 	}
 
@@ -361,7 +371,7 @@ func (mh *MsgHandle) AddRouter(msgID uint32, router ziface.IRouter) {
 	// 2. Add the binding relationship between msg and API
 	// (添加msg与api的绑定关系)
 	mh.Apis[msgID] = router
-	zlog.Ins().InfoF("Add Router msgID = %d", msgID)
+	slog.Info("Add Router", "msgID", msgID)
 }
 
 // AddRouterSlices adds router handlers using slices
@@ -383,14 +393,14 @@ func (mh *MsgHandle) Use(Handlers ...ziface.RouterHandler) ziface.IRouterSlices 
 func (mh *MsgHandle) doMsgHandlerSlices(request ziface.IRequest, workerID int) {
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Ins().ErrorF("workerID: %d doMsgHandler panic: %v", workerID, err)
+			slog.Error("doMsgHandler panic", "workerID", workerID, "err", err)
 		}
 	}()
 
 	msgId := request.GetMsgID()
 	handlers, ok := mh.RouterSlices.GetHandlers(msgId)
 	if !ok {
-		zlog.Ins().ErrorF("api msgID = %d is not FOUND!", request.GetMsgID())
+		slog.Error("api not FOUND", "msgID", request.GetMsgID())
 		return
 	}
 
@@ -401,7 +411,7 @@ func (mh *MsgHandle) doMsgHandlerSlices(request ziface.IRequest, workerID int) {
 }
 
 func (mh *MsgHandle) StopOneWorker(workerID int) {
-	zlog.Ins().DebugF("stop Worker ID = %d ", workerID)
+	slog.Debug("stop Worker", "workerID", workerID)
 	// Stop the worker by closing the corresponding taskQueue
 	// (停止一个Worker，通过关闭对应的taskQueue)
 	close(mh.TaskQueue[workerID])
@@ -410,37 +420,38 @@ func (mh *MsgHandle) StopOneWorker(workerID int) {
 // StartOneWorker starts a worker workflow
 // (启动一个Worker工作流程)
 func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest) {
-	zlog.Ins().DebugF("Worker ID = %d is started.", workerID)
+	slog.Debug("Worker started", "workerID", workerID)
 	// Continuously wait for messages in the queue
 	// (不断地等待队列中的消息)
-	for {
-		select {
+	for request := range taskQueue {
 		// If there is a message, take out the Request from the queue and execute the bound business method
 		// (有消息则取出队列的Request，并执行绑定的业务方法)
-		case request, ok := <-taskQueue:
-			if !ok {
-				// DynamicBind Mode, destroy current worker by close the taskQueue
-				// (DynamicBind模式下，临时创建的worker, 是通过关闭taskQueue 来销毁当前worker)
-				zlog.Ins().ErrorF(" taskQueue is closed, Worker ID = %d quit", workerID)
-				return
-			}
-			switch req := request.(type) {
+		switch req := request.(type) {
 
-			case ziface.IFuncRequest:
-				// Internal function call request (内部函数调用request)
+		case ziface.IFuncRequest:
+			// Internal function call request (内部函数调用request)
+			mh.doFuncHandler(req, workerID)
 
-				mh.doFuncHandler(req, workerID)
+		case ziface.IRequest: // Client message request
+			if !zconf.GlobalObject.RouterSlicesMode {
+				mh.doMsgHandler(req, workerID)
+			} else {
+				mh.RouterSlicesContext.RLock()
+				useContext := len(mh.RouterSlicesContext.Apis) > 0 || len(mh.RouterSlicesContext.Handlers) > 0
+				mh.RouterSlicesContext.RUnlock()
 
-			case ziface.IRequest: // Client message request
-
-				if !zconf.GlobalObject.RouterSlicesMode {
-					mh.doMsgHandler(req, workerID)
-				} else if zconf.GlobalObject.RouterSlicesMode {
+				if useContext {
+					mh.doMsgHandlerSlicesContext(req, workerID)
+				} else {
 					mh.doMsgHandlerSlices(req, workerID)
 				}
 			}
 		}
 	}
+
+	// DynamicBind Mode, destroy current worker by close the taskQueue
+	// (DynamicBind模式下，临时创建的worker, 是通过关闭taskQueue 来销毁当前worker)
+	slog.Error("taskQueue is closed, Worker quit", "workerID", workerID)
 }
 
 // StartWorkerPool starts the worker pool
@@ -457,4 +468,52 @@ func (mh *MsgHandle) StartWorkerPool() {
 		// (启动当前Worker，阻塞的等待对应的任务队列是否有消息传递进来)
 		go mh.StartOneWorker(i, mh.TaskQueue[i])
 	}
+}
+
+// UseContext adds global middleware handlers for context-based routing
+// (为基于Context的路由添加全局中间件处理程序)
+func (mh *MsgHandle) UseContext(Handlers ...ziface.HandlerFunc) ziface.IRouterSlicesContext {
+	mh.RouterSlicesContext.Use(Handlers...)
+	return mh.RouterSlicesContext
+}
+
+// AddRouterSlicesContext adds route handlers using context-based middleware
+// (使用基于Context的中间件添加路由处理程序)
+func (mh *MsgHandle) AddRouterSlicesContext(msgId uint32, handler ...ziface.HandlerFunc) ziface.IRouterSlicesContext {
+	mh.RouterSlicesContext.AddHandler(msgId, handler...)
+	return mh.RouterSlicesContext
+}
+
+// GroupContext creates a route group for context-based routing
+// (为基于Context的路由创建路由分组)
+func (mh *MsgHandle) GroupContext(start, end uint32, Handlers ...ziface.HandlerFunc) ziface.IGroupRouterSlicesContext {
+	return mh.RouterSlicesContext.Group(start, end, Handlers...)
+}
+
+// doMsgHandlerSlicesContext handles messages using context-based middleware chain
+// (使用基于Context的中间件链处理消息)
+func (mh *MsgHandle) doMsgHandlerSlicesContext(request ziface.IRequest, workerID int) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error("doMsgHandlerSlicesContext panic", "workerID", workerID, "err", err)
+		}
+	}()
+
+	msgId := request.GetMsgID()
+	handlers, ok := mh.RouterSlicesContext.GetHandlers(msgId)
+	if !ok {
+		slog.Error("api not FOUND", "msgID", request.GetMsgID())
+		return
+	}
+
+	// Create a new context from the request
+	ctx := ziface.NewContext(request.GetConnection(), msgId, request.GetData())
+	ctx.Ctx = request.Context() // Use the request's context
+	ctx.SetHandlers(handlers)
+
+	// Execute the middleware chain
+	ctx.Next()
+
+	// 执行完成后回收 Request 对象回对象池
+	PutRequest(request)
 }

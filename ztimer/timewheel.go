@@ -9,10 +9,9 @@ package ztimer
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
-
-	"github.com/aceld/zinx/zlog"
 )
 
 /*
@@ -66,7 +65,7 @@ func NewTimeWheel(name string, interval int64, scales int, maxCap int) *TimeWhee
 		tw.timerQueue[i] = make(map[uint32]*Timer, maxCap)
 	}
 
-	zlog.Ins().InfoF("Init timerWhell name = %s is Done!", tw.name)
+	slog.Info(fmt.Sprintf("Init timerWhell name = %s is Done!", tw.name))
 	return tw
 }
 
@@ -86,7 +85,7 @@ func (tw *TimeWheel) addTimer(tID uint32, t *Timer, forceNext bool) error {
 	defer func() error {
 		if err := recover(); err != nil {
 			errstr := fmt.Sprintf("addTimer function err : %s", err)
-			zlog.Ins().ErrorF("addTimer function err : %s", err)
+			slog.Error(fmt.Sprintf("addTimer function err : %s", err))
 			return errors.New(errstr)
 		}
 		return nil
@@ -152,7 +151,7 @@ func (tw *TimeWheel) RemoveTimer(tID uint32) {
 // AddTimeWheel 给一个时间轮添加下层时间轮 比如给小时时间轮添加分钟时间轮，给分钟时间轮添加秒时间轮
 func (tw *TimeWheel) AddTimeWheel(next *TimeWheel) {
 	tw.nextTimeWheel = next
-	zlog.Ins().InfoF("Add timerWhell[%s]'s next [%s] is succ!", tw.name, next.name)
+	slog.Info(fmt.Sprintf("Add timerWhell[%s]'s next [%s] is succ!", tw.name, next.name))
 }
 
 /*
@@ -190,7 +189,7 @@ func (tw *TimeWheel) run() {
 // Run 非阻塞的方式让时间轮转起来
 func (tw *TimeWheel) Run() {
 	go tw.run()
-	zlog.Ins().InfoF("timerwheel name = %s is running...", tw.name)
+	slog.Info(fmt.Sprintf("timerwheel name = %s is running...", tw.name))
 }
 
 // GetTimerWithIn 获取定时器在一段时间间隔内的Timer

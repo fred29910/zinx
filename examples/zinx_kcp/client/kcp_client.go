@@ -1,21 +1,22 @@
 package main
 
 import (
-	"fmt"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zpack"
-	"github.com/xtaci/kcp-go"
 	"io"
+	"log/slog"
 	"time"
+
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/zpack"
+	"github.com/xtaci/kcp-go/v5"
 )
 
 // 模拟客户端
 func main() {
-	fmt.Println("Client Test ... start")
+	slog.Debug("Client Test ... start")
 	// Replace net.Dial with kcp.DialWithOptions
 	conn, err := kcp.Dial("127.0.0.1:7777")
 	if err != nil {
-		fmt.Println("client start err, exit!")
+		slog.Debug("client start err, exit!")
 		return
 	}
 
@@ -23,7 +24,7 @@ func main() {
 	sendMsg, _ := dp.Pack(zpack.NewMsgPackage(1, []byte("client test message")))
 	_, err = conn.Write(sendMsg)
 	if err != nil {
-		fmt.Println("client write err: ", err)
+		slog.Debug("client write err: ", "err", err)
 		return
 	}
 
@@ -32,14 +33,14 @@ func main() {
 		headData := make([]byte, dp.GetHeadLen())
 		_, err = io.ReadFull(conn, headData)
 		if err != nil {
-			fmt.Println("client read head err: ", err)
+			slog.Debug("client read head err: ", "err", err)
 			return
 		}
 
 		// Unpack the headData byte stream into msg. (将headData字节流 拆包到msg中)
 		msgHead, err := dp.Unpack(headData)
 		if err != nil {
-			fmt.Println("client unpack head err: ", err)
+			slog.Debug("client unpack head err: ", "err", err)
 			return
 		}
 
@@ -51,16 +52,16 @@ func main() {
 			// read from io.Reader into msg.Data (根据dataLen从io中读取字节流)
 			_, err := io.ReadFull(conn, msg.Data)
 			if err != nil {
-				fmt.Println("client unpack data err")
+				slog.Debug("client unpack data err")
 				return
 			}
 
-			fmt.Printf("==> Client receive Msg: ID = %d, len = %d , data = %s\n", msg.ID, msg.DataLen, msg.Data)
+			slog.Debug("==> Client receive Msg", "ID", msg.ID, "len", msg.DataLen, "data", msg.Data)
 
 			time.Sleep(1 * time.Second)
 			_, err = conn.Write(sendMsg)
 			if err != nil {
-				fmt.Println("client write err: ", err)
+				slog.Debug("client write err: ", "err", err)
 				return
 			}
 		}

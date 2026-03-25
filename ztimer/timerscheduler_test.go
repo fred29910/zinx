@@ -11,15 +11,14 @@ package ztimer
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"testing"
 	"time"
-
-	"github.com/aceld/zinx/zlog"
 )
 
 // 触发函数
 func foo(args ...interface{}) {
-	fmt.Printf("I am No. %d function, delay %d ms\n", args[0].(int), args[1].(int))
+	slog.Debug("executed function", "No", args[0].(int), "delay_ms", args[1].(int))
 }
 
 // 手动创建调度器运转时间轮
@@ -32,7 +31,7 @@ func TestNewTimerScheduler(t *testing.T) {
 		f := NewDelayFunc(foo, []interface{}{i, i * 3})
 		tID, err := timerScheduler.CreateTimerAfter(f, time.Duration(3*i)*time.Millisecond)
 		if err != nil {
-			zlog.Error("create timer error", tID, err)
+			slog.Error(fmt.Sprint("create timer error ", tID, " ", err))
 			break
 		}
 	}
@@ -58,7 +57,7 @@ func TestNewAutoExecTimerScheduler(t *testing.T) {
 		f := NewDelayFunc(foo, []interface{}{i, i * 3})
 		tID, err := autoTS.CreateTimerAfter(f, time.Duration(3*i)*time.Millisecond)
 		if err != nil {
-			zlog.Error("create timer error", tID, err)
+			slog.Error(fmt.Sprint("create timer error ", tID, " ", err))
 			break
 		}
 	}

@@ -152,7 +152,7 @@ func (m *AOIManager) GetPIDsByPos(x, y float32) (playerIDs []int) {
 	grIDs := m.GetSurroundGrIDsByGID(gID)
 	for _, v := range grIDs {
 		playerIDs = append(playerIDs, v.GetPlyerIDs()...)
-		//fmt.Printf("===> grID ID : %d, pIDs : %v  ====", v.GID, v.GetPlyerIDs())
+		// slog.Debug("===> grID ID", "GID", v.GID, "pIDs", v.GetPlyerIDs())
 	}
 
 	return

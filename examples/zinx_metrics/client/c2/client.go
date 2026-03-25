@@ -1,14 +1,16 @@
 package main
 
 import (
+	"log/slog"
+
 	"fmt"
-	"github.com/aceld/zinx/examples/zinx_client/c_router"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
-	"github.com/aceld/zinx/znet"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/aceld/zinx/v3/examples/zinx_client/c_router"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 func business(conn ziface.IConnection) {
@@ -16,8 +18,8 @@ func business(conn ziface.IConnection) {
 	for {
 		err := conn.SendMsg(100, []byte("Ping...[FromClient]"))
 		if err != nil {
-			fmt.Println(err)
-			zlog.Error(err)
+			slog.Debug("error occurred", "err", err)
+			slog.Error("error", "err", err)
 			break
 		}
 
@@ -26,7 +28,7 @@ func business(conn ziface.IConnection) {
 }
 
 func DoClientConnectedBegin(conn ziface.IConnection) {
-	zlog.Debug("DoConnectionBegin is Called ... ")
+	slog.Debug("DoConnectionBegin is Called ... ")
 
 	conn.SetProperty("Name", "刘丹冰Aceld")
 	conn.SetProperty("Home", "https://yuque.com/aceld")
@@ -36,14 +38,14 @@ func DoClientConnectedBegin(conn ziface.IConnection) {
 
 func DoClientConnectedLost(conn ziface.IConnection) {
 	if name, err := conn.GetProperty("Name"); err == nil {
-		zlog.Debug("Conn Property Name = ", name)
+		slog.Debug(fmt.Sprint("Conn Property Name = ", name))
 	}
 
 	if home, err := conn.GetProperty("Home"); err == nil {
-		zlog.Debug("Conn Property Home = ", home)
+		slog.Debug(fmt.Sprint("Conn Property Home = ", home))
 	}
 
-	zlog.Debug("DoClientConnectedLost is Called ... ")
+	slog.Debug("DoClientConnectedLost is Called ... ")
 }
 
 func main() {
@@ -61,7 +63,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 
 	client.Stop()
 	time.Sleep(time.Second * 2)

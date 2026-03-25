@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/aceld/zinx/examples/zinx_closecallback/router"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/examples/zinx_closecallback/router"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // business handles the main business logic for sending ping messages
@@ -17,7 +18,7 @@ func business(conn ziface.IConnection) {
 	for i := 0; i < 3; i++ {
 		err := conn.SendMsg(1, []byte(fmt.Sprintf("Ping %d", i+1)))
 		if err != nil {
-			fmt.Println("SendMsg error:", err)
+			slog.Debug("SendMsg error:", "err", err)
 			break
 		}
 
@@ -25,14 +26,14 @@ func business(conn ziface.IConnection) {
 	}
 
 	// Actively disconnect after sending is complete / 发送完成后主动断开连接
-	fmt.Println("Client actively disconnects")
+	slog.Debug("Client actively disconnects")
 	conn.Stop()
 }
 
 // DoClientConnectedBegin is the callback function when connection starts
 // DoClientConnectedBegin 是连接开始时的回调函数
 func DoClientConnectedBegin(conn ziface.IConnection) {
-	fmt.Println("Client connection started")
+	slog.Debug("Client connection started")
 
 	// Set connection properties / 设置连接属性
 	conn.SetProperty("StartTime", time.Now())
@@ -52,7 +53,7 @@ func DoClientConnectedBegin(conn ziface.IConnection) {
 // DoClientConnectedLost is the callback function when connection is lost
 // DoClientConnectedLost 是连接断开时的回调函数
 func DoClientConnectedLost(conn ziface.IConnection) {
-	fmt.Println("Client connection lost")
+	slog.Debug("Client connection lost")
 }
 
 func main() {
@@ -67,7 +68,7 @@ func main() {
 	client.AddRouter(0, &router.PingRouter{})
 
 	// Start client / 启动客户端
-	fmt.Println("Client starting")
+	slog.Debug("Client starting")
 	client.Start()
 
 	// Wait for interrupt signal / 等待中断信号

@@ -7,9 +7,8 @@ package ztimer
  */
 import (
 	"fmt"
+	"log/slog"
 	"reflect"
-
-	"github.com/aceld/zinx/zlog"
 )
 
 /*
@@ -41,7 +40,7 @@ func (df *DelayFunc) String() string {
 func (df *DelayFunc) Call() {
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Ins().ErrorF("%s Call err: %v", df.String(), err)
+			slog.Error(fmt.Sprintf("%s Call err: %v", df.String(), err))
 		}
 	}()
 

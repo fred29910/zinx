@@ -50,6 +50,13 @@ http://zinx.me
 | <img src="https://s1.ax1x.com/2022/09/23/xkQcng.png" width = "100" height = "100" alt="" align=center />| [![zinx-youtube](https://s2.ax1x.com/2019/10/14/KSurCR.jpg)](https://www.youtube.com/watch?v=U95iF-HMWsU&list=PL_GrAPKmuajzeNI8HBTi-k5NQO1g0rM-A)| 
 
     
+## 核心特性 (Features)
+- **高性能 & 轻量级**：专为高并发设计的 TCP/WebSocket/KCP 服务器框架
+- **日志标准库集成**：全面采用 Go 官方标准库 `log/slog`，天然支持结构化日志与上下文字段追踪
+- **多协议支持**：内置完善的 TCP, WebSocket, KCP 协议封装与统一 API
+- **请求路由机制**：基于 Route 的责任链设计，极易解耦和扩展具体业务模块
+- **消息处理集群**：支持读写协程分离、消息缓冲队列与全局 Worker 任务池处理机制
+
 ## 一、写在前面
 
 我们为什么要做Zinx，Golang目前在服务器的应用框架很多，但是应用在游戏领域或者其他长连接的领域的轻量级企业框架甚少。
@@ -81,7 +88,7 @@ Zinx框架的项目制作采用编码和学习教程同步进行，将开发的�
 [<Zinx的Tcp调试工具>](https://github.com/xxl6097/tcptest)
 
 **版本**
-Golang 1.17+
+Golang 1.21+
 
 DownLoad zinx Source
 
@@ -89,14 +96,14 @@ DownLoad zinx Source
 $go get github.com/aceld/zinx
 ```
 
-> note: Golang Version 1.17+
+> note: Golang Version 1.26+
 
 #### Zinx-Server
 ```go
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"github.com/aceld/zinx/ziface"
 	"github.com/aceld/zinx/znet"
 )
@@ -109,7 +116,7 @@ type PingRouter struct {
 //Ping Handle MsgId=1的路由处理方法
 func (r *PingRouter) Handle(request ziface.IRequest) {
 	//读取客户端的数据
-	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
+	slog.Info("recv from client", "msgId", request.GetMsgID(), "data", string(request.GetData()))
 }
 
 func main() {
@@ -187,7 +194,7 @@ HeartbeatMax: 10
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"github.com/aceld/zinx/ziface"
 	"github.com/aceld/zinx/znet"
 	"time"
@@ -198,7 +205,7 @@ func pingLoop(conn ziface.IConnection) {
 	for {
 		err := conn.SendMsg(1, []byte("Ping...Ping...Ping...[FromClient]"))
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("send msg err", "err", err)
 			break
 		}
 
@@ -208,7 +215,7 @@ func pingLoop(conn ziface.IConnection) {
 
 //创建连接的时候执行
 func onClientStart(conn ziface.IConnection) {
-	fmt.Println("onClientStart is Called ... ")
+	slog.Info("onClientStart is Called ... ")
 	go pingLoop(conn)
 }
 

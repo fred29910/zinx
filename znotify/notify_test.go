@@ -1,16 +1,16 @@
 package znotify
 
 import (
-	"fmt"
+	"log/slog"
 	"net"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/aceld/zinx/zconf"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
-	"github.com/aceld/zinx/zpack"
+	"github.com/aceld/zinx/v3/zconf"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
+	"github.com/aceld/zinx/v3/zpack"
 )
 
 var nt = NewZNotify()
@@ -48,7 +48,7 @@ func Clinet() {
 		go func(i int) {
 			conn, err := net.Dial("tcp", "127.0.0.1:9991")
 			if err != nil {
-				fmt.Println("net dial err:", err)
+				slog.Debug("net dial err:", "err", err)
 				return
 			}
 			defer conn.Close()
@@ -78,7 +78,7 @@ func ClientJoin() {
 			go func(i int) {
 				conn, err := net.Dial("tcp", "127.0.0.1:9991")
 				if err != nil {
-					fmt.Println("net dial err:", err)
+					slog.Debug("net dial err:", "err", err)
 					return
 				}
 				defer conn.Close()
@@ -110,7 +110,7 @@ func TestAA(t *testing.T) {
 }
 
 func BenchmarkNotify(b *testing.B) {
-	fmt.Println("Begin BenchmarkNotify")
+	slog.Debug("Begin BenchmarkNotify")
 	time.Sleep(60 * time.Second)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

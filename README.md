@@ -52,6 +52,13 @@ http://zinx.me
 
 
 
+## Features
+- **High Performance & Lightweight**: A minimalist TCP/WebSocket/KCP server framework tailored for high concurrency.
+- **Standard Logging**: Fully integrates with Go's standard `log/slog` for structured logging, allowing easy contextual tracing.
+- **Multi-Protocol Support**: Built-in network wrapper providing unified APIs for TCP, WebSocket, and KCP.
+- **Router-based Mechanism**: Responsible chain router design ensuring business modules are highly decoupled and easily extensible.
+- **Worker Pool & Msg Queues**: Out-of-the-box global worker pool and buffered message queues maximizing parallel message handling.
+
 ## I. One word that has been said before
 
 Why did we create Zinx? Although there are many Golang application frameworks for servers, there are few lightweight enterprise frameworks applied in the gaming or other long-linked fields.
@@ -87,14 +94,14 @@ DownLoad zinx Source
 $go get github.com/aceld/zinx
 ```
 
-> note: Golang Version 1.17+
+> note: Golang Version 1.21+
 
 #### Zinx-Server
 ```go
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"github.com/aceld/zinx/ziface"
 	"github.com/aceld/zinx/znet"
 )
@@ -107,7 +114,7 @@ type PingRouter struct {
 //Ping Handle MsgId=1
 func (r *PingRouter) Handle(request ziface.IRequest) {
 	//read client data
-	fmt.Println("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
+	slog.Info("recv from client", "msgId", request.GetMsgID(), "data", string(request.GetData()))
 }
 
 func main() {
@@ -183,7 +190,7 @@ HeartbeatMax: 10
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"github.com/aceld/zinx/ziface"
 	"github.com/aceld/zinx/znet"
 	"time"
@@ -194,7 +201,7 @@ func pingLoop(conn ziface.IConnection) {
 	for {
 		err := conn.SendMsg(1, []byte("Ping...Ping...Ping...[FromClient]"))
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("send msg err", "err", err)
 			break
 		}
 
@@ -204,7 +211,7 @@ func pingLoop(conn ziface.IConnection) {
 
 //Executed when a connection is created
 func onClientStart(conn ziface.IConnection) {
-	fmt.Println("onClientStart is Called ... ")
+	slog.Info("onClientStart is Called ... ")
 	go pingLoop(conn)
 }
 

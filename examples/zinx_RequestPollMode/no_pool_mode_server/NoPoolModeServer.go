@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/aceld/zinx/zconf"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/zconf"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // 如果不使用对象池模式则可以直接传递但是产生大量的 Request 对象
@@ -19,7 +19,7 @@ func NoPoll1(request ziface.IRequest) {
 func NoPoll2(request ziface.IRequest) {
 	time.Sleep(time.Second * 3)
 	get, _ := request.Get("num")
-	fmt.Printf("num:%v \n", get)
+	slog.Debug("num count", "num", get)
 
 }
 

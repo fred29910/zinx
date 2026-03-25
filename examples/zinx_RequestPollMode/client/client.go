@@ -1,15 +1,16 @@
 package main
 
 import (
+	"log/slog"
+
 	"fmt"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/aceld/zinx/examples/zinx_client/c_router"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/examples/zinx_client/c_router"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // Custom business logic of the client (客户端自定义业务)
@@ -18,15 +19,15 @@ func business(conn ziface.IConnection) {
 	for i := 0; i < 100; i++ {
 		err := conn.SendMsg(1, []byte("Ping...[FromClient]"))
 		if err != nil {
-			fmt.Println(err)
-			zlog.Error(err)
+			slog.Debug("error occurred", "err", err)
+			slog.Error("error", "err", err)
 			break
 		}
 
 		err = conn.SendMsg(2, []byte("Ping...[FromClient]"))
 		if err != nil {
-			fmt.Println(err)
-			zlog.Error(err)
+			slog.Debug("error occurred", "err", err)
+			slog.Error("error", "err", err)
 			break
 		}
 
@@ -35,7 +36,7 @@ func business(conn ziface.IConnection) {
 
 // Function to execute when the connection is created (创建连接的时候执行)
 func DoClientConnectedBegin(conn ziface.IConnection) {
-	zlog.Debug("DoConnectionBegin is Called ... ")
+	slog.Debug("DoConnectionBegin is Called ... ")
 
 	// Set two connection properties after the connection is created (设置两个连接属性，在连接创建之后)
 	conn.SetProperty("Name", "刘丹冰Aceld")
@@ -49,14 +50,14 @@ func DoClientConnectedLost(conn ziface.IConnection) {
 	// Get the Name and Home properties of the connection before it is destroyed
 	// (在连接销毁之前，查询conn的Name，Home属性)
 	if name, err := conn.GetProperty("Name"); err == nil {
-		zlog.Debug("Conn Property Name = ", name)
+		slog.Debug(fmt.Sprint("Conn Property Name = ", name))
 	}
 
 	if home, err := conn.GetProperty("Home"); err == nil {
-		zlog.Debug("Conn Property Home = ", home)
+		slog.Debug(fmt.Sprint("Conn Property Home = ", home))
 	}
 
-	zlog.Debug("DoClientConnectedLost is Called ... ")
+	slog.Debug("DoClientConnectedLost is Called ... ")
 }
 
 func main() {
@@ -80,7 +81,7 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 	client.Stop()
 	time.Sleep(time.Second * 2)
 }

@@ -1,13 +1,13 @@
 package core
 
 import (
-	"fmt"
+	"log/slog"
 	"math/rand"
 	"sync"
 	"time"
 
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zinx_app_demo/mmo_game/pb"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/zinx_app_demo/mmo_game/pb"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -393,26 +393,26 @@ func (p *Player) LostConnection() {
 //	(发送消息给客户端，主要是将pb的protobuf数据序列化之后发送)
 func (p *Player) SendMsg(msgID uint32, data proto.Message) {
 	if p.Conn == nil {
-		fmt.Println("connection in player is nil")
+		slog.Debug("connection in player is nil")
 		return
 	}
 
-	// fmt.Printf("before Marshal data = %+v\n", data)
+	// slog.Debug("before Marshal", "data", data)
 
 	// Serialize the proto Message structure
 	// 将proto Message结构体序列化
 	msg, err := proto.Marshal(data)
 	if err != nil {
-		fmt.Println("marshal msg err: ", err)
+		slog.Debug("marshal msg err: ", "err", err)
 		return
 	}
 
-	// fmt.Printf("after Marshal data = %+v\n", msg)
+	// slog.Debug("after Marshal", "data", msg)
 
 	// Call the Zinx framework's SendMsg to send the packet
 	// 调用Zinx框架的SendMsg发包
 	if err := p.Conn.SendMsg(msgID, msg); err != nil {
-		fmt.Println("Player SendMsg error !")
+		slog.Debug("Player SendMsg error !")
 		return
 	}
 

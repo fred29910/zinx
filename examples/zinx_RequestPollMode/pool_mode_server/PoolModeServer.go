@@ -1,19 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/aceld/zinx/zconf"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/zconf"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 func Poll1(request ziface.IRequest) {
 	// 如果需要连接信息
 	request.Set("conn", request.GetConnection())
 	request.Set("num", 1)
-	fmt.Printf("request 1 addr:%p,conn:%p \n", &request, request.GetConnection())
+	slog.Debug("request 1", "addr", &request, "conn", request.GetConnection())
 
 	// 需要新线程同时也需要上下文的情况,则需要调用 copy 方法拷贝一份
 	cp := request.Copy()
@@ -27,7 +27,7 @@ func Poll2(request ziface.IRequest) {
 	defer func() {
 		if err := recover(); err != nil {
 			// 接收一个panic
-			fmt.Println(err)
+			slog.Debug("error occurred", "err", err)
 		}
 
 	}()
@@ -37,7 +37,7 @@ func Poll2(request ziface.IRequest) {
 		request.GetConnection().GetConnID()
 		//  打印出的 Request 对象的地址是不一致的
 		conn := get_conn.(ziface.IConnection)
-		fmt.Printf("request copy addr:%p,conn:%p \n", &request, conn)
+		slog.Debug("request copy", "addr", &request, "conn", conn)
 		// conn.sendMsg()
 	}
 }
@@ -47,7 +47,7 @@ func Poll3(request ziface.IRequest) {
 	time.Sleep(time.Second * 3)
 	get, _ := request.Get("num")
 	// 池化对象如果直接传递被影响可能随机打印被修改的值 3
-	fmt.Printf("num:%v \n", get)
+	slog.Debug("num count", "num", get)
 
 }
 

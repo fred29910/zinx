@@ -2,11 +2,12 @@ package znet
 
 import (
 	"errors"
+	"fmt"
+	"log/slog"
 	"strconv"
 
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
-	"github.com/aceld/zinx/zutils"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/zutils"
 )
 
 type ConnManager struct {
@@ -23,14 +24,14 @@ func (connMgr *ConnManager) Add(conn ziface.IConnection) {
 
 	connMgr.connections.Set(conn.GetConnIdStr(), conn) // 将conn连接添加到ConnManager中
 
-	zlog.Ins().DebugF("connection add to ConnManager successfully: conn num = %d", connMgr.Len())
+	slog.Debug(fmt.Sprintf("connection add to ConnManager successfully: conn num = %d", connMgr.Len()))
 }
 
 func (connMgr *ConnManager) Remove(conn ziface.IConnection) {
 
 	connMgr.connections.Remove(conn.GetConnIdStr()) // 删除连接信息
 
-	zlog.Ins().DebugF("connection Remove ConnID=%d successfully: conn num = %d", conn.GetConnID(), connMgr.Len())
+	slog.Debug(fmt.Sprintf("connection Remove ConnID=%d successfully: conn num = %d", conn.GetConnID(), connMgr.Len()))
 }
 
 func (connMgr *ConnManager) Get(connID uint64) (ziface.IConnection, error) {
@@ -72,7 +73,7 @@ func (connMgr *ConnManager) ClearConn() {
 		}
 	}
 
-	zlog.Ins().InfoF("Clear All Connections successfully: conn num = %d", connMgr.Len())
+	slog.Info(fmt.Sprintf("Clear All Connections successfully: conn num = %d", connMgr.Len()))
 }
 
 func (connMgr *ConnManager) GetAllConnID() []uint64 {
@@ -85,7 +86,7 @@ func (connMgr *ConnManager) GetAllConnID() []uint64 {
 		if err == nil {
 			ids = append(ids, connId)
 		} else {
-			zlog.Ins().InfoF("GetAllConnID Id: %d, error: %v", connId, err)
+			slog.Info(fmt.Sprintf("GetAllConnID Id: %d, error: %v", connId, err))
 		}
 	}
 
@@ -103,7 +104,7 @@ func (connMgr *ConnManager) Range(cb func(uint64, ziface.IConnection, interface{
 		connId, _ := strconv.ParseUint(key, 10, 64)
 		err = cb(connId, conn, args)
 		if err != nil {
-			zlog.Ins().InfoF("Range key: %v, v: %v, error: %v", key, v, err)
+			slog.Info(fmt.Sprintf("Range key: %v, v: %v, error: %v", key, v, err))
 		}
 	})
 
@@ -117,7 +118,7 @@ func (connMgr *ConnManager) Range2(cb func(string, ziface.IConnection, interface
 		conn, _ := v.(ziface.IConnection)
 		err = cb(conn.GetConnIdStr(), conn, args)
 		if err != nil {
-			zlog.Ins().InfoF("Range2 key: %v, v: %v, error: %v", key, v, err)
+			slog.Info(fmt.Sprintf("Range2 key: %v, v: %v, error: %v", key, v, err))
 		}
 	})
 

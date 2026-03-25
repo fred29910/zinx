@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // ping test 自定义路由
@@ -14,28 +14,28 @@ type PingRouter struct {
 
 // Test PreHandle
 func (this *PingRouter) PreHandle(request ziface.IRequest) {
-	fmt.Println("Call Router PreHandle")
+	slog.Debug("Call Router PreHandle")
 	_, err := request.GetConnection().GetTCPConnection().Write([]byte("before ping ....\n"))
 	if err != nil {
-		fmt.Println("call back ping ping ping error")
+		slog.Debug("call back ping ping ping error")
 	}
 }
 
 // Test Handle
 func (this *PingRouter) Handle(request ziface.IRequest) {
-	fmt.Println("Call PingRouter Handle")
+	slog.Debug("Call PingRouter Handle")
 	_, err := request.GetConnection().GetTCPConnection().Write([]byte("ping...ping...ping\n"))
 	if err != nil {
-		fmt.Println("call back ping ping ping error")
+		slog.Debug("call back ping ping ping error")
 	}
 }
 
 // Test PostHandle
 func (this *PingRouter) PostHandle(request ziface.IRequest) {
-	fmt.Println("Call Router PostHandle")
+	slog.Debug("Call Router PostHandle")
 	_, err := request.GetConnection().GetTCPConnection().Write([]byte("After ping .....\n"))
 	if err != nil {
-		fmt.Println("call back ping ping ping error")
+		slog.Debug("call back ping ping ping error")
 	}
 }
 

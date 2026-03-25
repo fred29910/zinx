@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"time"
 )
@@ -11,27 +12,27 @@ import (
 */
 func main() {
 
-	fmt.Println("Client Test ... start")
+	slog.Debug("Client Test ... start")
 	//3秒之后发起测试请求，给服务端开启服务的机会
 	time.Sleep(3 * time.Second)
 
 	conn, err := net.Dial("tcp", "127.0.0.1:7777")
 	if err != nil {
-		fmt.Println("client start err, exit!")
+		slog.Debug("client start err, exit!")
 		return
 	}
 
 	for {
 		_, err := conn.Write([]byte("hahaha"))
 		if err != nil {
-			fmt.Println("write error err ", err)
+			slog.Debug("write error err ", "err", err)
 			return
 		}
 
 		buf := make([]byte, 512)
 		cnt, err := conn.Read(buf)
 		if err != nil {
-			fmt.Println("read buf error ")
+			slog.Debug("read buf error ")
 			return
 		}
 

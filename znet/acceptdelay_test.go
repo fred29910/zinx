@@ -1,7 +1,7 @@
 package znet
 
 import (
-	"fmt"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -10,12 +10,12 @@ import (
 )
 
 func setup() {
-	fmt.Println("Test Begin")
+	slog.Debug("Test Begin")
 }
 
 func teardown() {
 	AcceptDelay.Reset()
-	fmt.Println("Test End")
+	slog.Debug("Test End")
 }
 
 func TestDelay(t *testing.T) {

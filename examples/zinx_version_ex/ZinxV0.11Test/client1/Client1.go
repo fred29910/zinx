@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"github.com/aceld/zinx/zpack"
 	"io"
+	"log/slog"
 	"net"
 	"time"
+
+	"github.com/aceld/zinx/v3/zpack"
 )
 
 /*
@@ -13,13 +14,13 @@ import (
 */
 func main() {
 
-	fmt.Println("Client Test ... start")
+	slog.Debug("Client Test ... start")
 	//3秒之后发起测试请求，给服务端开启服务的机会
 	time.Sleep(3 * time.Second)
 
 	conn, err := net.Dial("tcp", "127.0.0.1:7777")
 	if err != nil {
-		fmt.Println("client start err, exit!")
+		slog.Debug("client start err, exit!")
 		return
 	}
 
@@ -29,7 +30,7 @@ func main() {
 		msg, _ := dp.Pack(zpack.NewMsgPackage(1, []byte("Zinx V0.8 Client1 Test Message")))
 		_, err := conn.Write(msg)
 		if err != nil {
-			fmt.Println("write error err ", err)
+			slog.Debug("write error err ", "err", err)
 			return
 		}
 
@@ -37,13 +38,13 @@ func main() {
 		headData := make([]byte, dp.GetHeadLen())
 		_, err = io.ReadFull(conn, headData) //ReadFull 会把msg填充满为止
 		if err != nil {
-			fmt.Println("read head error")
+			slog.Debug("read head error")
 			break
 		}
 		//将headData字节流 拆包到msg中
 		msgHead, err := dp.Unpack(headData)
 		if err != nil {
-			fmt.Println("server unpack err:", err)
+			slog.Debug("server unpack err:", "err", err)
 			return
 		}
 
@@ -55,11 +56,11 @@ func main() {
 			//根据dataLen从io中读取字节流
 			_, err := io.ReadFull(conn, msg.Data)
 			if err != nil {
-				fmt.Println("server unpack data err:", err)
+				slog.Debug("server unpack data err:", "err", err)
 				return
 			}
 
-			fmt.Println("==> Recv Msg: ID=", msg.ID, ", len=", msg.DataLen, ", data=", string(msg.Data))
+			slog.Debug("==> Recv Msg", "ID", msg.ID, "len", msg.DataLen, "data", string(msg.Data))
 		}
 
 		time.Sleep(1 * time.Second)

@@ -1,19 +1,20 @@
 package main
 
 import (
-	"github.com/aceld/zinx/examples/zinx_decoder/router"
-	"github.com/aceld/zinx/zdecoder"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
-	"github.com/aceld/zinx/znet"
+	"log/slog"
+
+	"github.com/aceld/zinx/v3/examples/zinx_decoder/router"
+	"github.com/aceld/zinx/v3/zdecoder"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 func DoConnectionBegin(conn ziface.IConnection) {
-	zlog.Ins().InfoF("DoConnectionBegin is Called ...")
+	slog.Info("DoConnectionBegin is Called ...")
 }
 
 func DoConnectionLost(conn ziface.IConnection) {
-	zlog.Ins().InfoF("Conn is Lost")
+	slog.Info("Conn is Lost")
 }
 
 func main() {

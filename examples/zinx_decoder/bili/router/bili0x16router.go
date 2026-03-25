@@ -2,10 +2,13 @@ package router
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
-	"github.com/aceld/zinx/zdecoder"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
+	"log/slog"
+
+	"github.com/aceld/zinx/v3/zdecoder"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 type Data0x16Router struct {
@@ -13,13 +16,12 @@ type Data0x16Router struct {
 }
 
 func (this *Data0x16Router) Handle(request ziface.IRequest) {
-	fmt.Println("Data0x16Router Handle", request.GetMessage().GetData())
+	slog.Debug(fmt.Sprintf("Data0x16Router Handle %s \n", hex.EncodeToString(request.GetMessage().GetData())))
 	_response := request.GetResponse()
 	if _response != nil {
-		switch _response.(type) {
+		switch _data := _response.(type) {
 		case zdecoder.HtlvCrcDecoder:
-			_data := _response.(zdecoder.HtlvCrcDecoder)
-			fmt.Println("Data0x16Router", _data)
+			slog.Debug(fmt.Sprintf("Data0x16Router %v \n", _data))
 			buffer := pack16(_data)
 			request.GetConnection().Send(buffer)
 		}

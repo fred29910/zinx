@@ -32,8 +32,48 @@ https://github.com/aceld/mmo_game_client
 
 [ < Zinx 文档 : 简体中文> ](https://www.yuque.com/aceld/tsgooa/sbvzgczh3hqz8q3l)
 
-## 4.Tutorial 
-### 4.1 Online Tutorial
+## 4. v3 Upgrade Notes
+
+This demo is updated to the recommended Zinx v3 style described in `MIGRATION.md`:
+
+- The server now uses `UseContext` and `AddRouterSlicesContext` instead of the classic `AddRouter`.
+- Chat and movement handlers are upgraded from `IRequest` routers to `HandlerFunc` handlers.
+- A route middleware resolves the current player from `pID` once and stores it in `ziface.Context`.
+- A release middleware returns pooled `Context` objects after each request.
+- The sample config enables `RouterSlicesMode` and `RequestPoolMode`.
+
+The connection lifecycle hooks remain unchanged, so the MMO flow is still:
+
+1. player connects
+2. `SyncPID` is sent
+3. spawn position is broadcast
+4. surrounding AOI state is synchronized
+5. movement/chat messages are handled by context-based routes
+
+## 5. Run The Demo
+
+Start the server from the demo directory so the local `conf/zinx.json` is picked up automatically:
+
+```bash
+cd zinx_app_demo/mmo_game
+go run .
+```
+
+Or point Zinx to the config file explicitly:
+
+```bash
+export ZINX_CONFIG_FILE_PATH=$(pwd)/conf/zinx.json
+go run ./zinx_app_demo/mmo_game
+```
+
+To run the robot client:
+
+```bash
+go run -tags robot ./zinx_app_demo/mmo_game/client_AI_robot.go
+```
+
+## 6.Tutorial 
+### 6.1 Online Tutorial
 
 | platform | Entry | 
 | ---- | ---- | 
@@ -41,7 +81,7 @@ https://github.com/aceld/mmo_game_client
 |<img src="https://user-images.githubusercontent.com/7778936/236784168-6528a9b8-d37b-4b02-a37c-b9988d7508d8.jpeg" width = "100" height = "100" alt="" align=center />|[《Golang轻量级并发服务器框架zinx》](https://www.yuque.com/aceld)|
 
 
-### 4.2 Online Tutorial Video
+### 6.2 Online Tutorial Video
 
 | platform | online video | 
 | ---- | ---- | 

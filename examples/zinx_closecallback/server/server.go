@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/aceld/zinx/examples/zinx_closecallback/router"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/examples/zinx_closecallback/router"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // DoConnectionBegin is the callback function when connection starts
 // DoConnectionBegin 是连接开始时的回调函数
 func DoConnectionBegin(conn ziface.IConnection) {
-	fmt.Println("Server connection started")
+	slog.Debug("Server connection started")
 
 	// Set connection properties / 设置连接属性
 	conn.SetProperty("StartTime", time.Now())
@@ -39,7 +40,7 @@ func DoConnectionBegin(conn ziface.IConnection) {
 // DoConnectionLost is the callback function when connection is lost
 // DoConnectionLost 是连接断开时的回调函数
 func DoConnectionLost(conn ziface.IConnection) {
-	fmt.Println("Server connection lost")
+	slog.Debug("Server connection lost")
 }
 
 func main() {
@@ -54,6 +55,6 @@ func main() {
 	s.AddRouter(1, &router.PingRouter{})
 
 	// Start server / 启动服务器
-	fmt.Println("Server starting")
+	slog.Debug("Server starting")
 	s.Serve()
 }

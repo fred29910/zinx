@@ -44,10 +44,11 @@ package zdecoder
 
 import (
 	"encoding/hex"
+	"fmt"
+	"log/slog"
 	"math"
 
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
+	"github.com/aceld/zinx/v3/ziface"
 )
 
 const HEADER_SIZE = 5
@@ -105,12 +106,12 @@ func (hcd *HtlvCrcDecoder) decode(data []byte) *HtlvCrcDecoder {
 
 	// CRC
 	if !CheckCRC(data[:datasize-2], htlvData.Crc) {
-		zlog.Ins().DebugF("crc check error %s %s\n", hex.EncodeToString(data), hex.EncodeToString(htlvData.Crc))
+		slog.Debug(fmt.Sprintf("crc check error %s %s\n", hex.EncodeToString(data), hex.EncodeToString(htlvData.Crc)))
 		return nil
 	}
 
-	//zlog.Ins().DebugF("2htlvData %s \n", hex.EncodeToString(htlvData.data))
-	//zlog.Ins().DebugF("HTLVCRC-DecodeData size:%d data:%+v\n", unsafe.Sizeof(htlvData), htlvData)
+	//slog.Debug(fmt.Sprintf("2htlvData %s \n", hex.EncodeToString(htlvData.data)))
+	//slog.Debug(fmt.Sprintf("HTLVCRC-DecodeData size:%d data:%+v\n", unsafe.Sizeof(htlvData), htlvData))
 
 	return &htlvData
 }
@@ -125,7 +126,7 @@ func (hcd *HtlvCrcDecoder) Intercept(chain ziface.IChain) ziface.IcResp {
 
 	//2. Get Data
 	data := iMessage.GetData()
-	//zlog.Ins().DebugF("HTLVCRC-RawData size:%d data:%s\n", len(data), hex.EncodeToString(data))
+	//slog.Debug(fmt.Sprintf("HTLVCRC-RawData size:%d data:%s\n", len(data), hex.EncodeToString(data)))
 
 	//3. If the amount of data read is less than the length of the header, proceed to the next layer directly.
 	// (读取的数据不超过包头，直接进入下一层)

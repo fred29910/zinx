@@ -4,9 +4,9 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -143,7 +143,7 @@ func (w *Writer) rotate() error {
 			if err1 == nil {
 				os.Remove(filepath.Join(w.fdir, fbakname))
 			} else {
-				fmt.Println(err1)
+				slog.Error("zip backup error", "err", err1)
 			}
 		}
 

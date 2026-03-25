@@ -8,12 +8,12 @@ package zconf
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/aceld/zinx/zlog"
 )
 
 const (
@@ -88,22 +88,7 @@ type Config struct {
 
 	// 是否开启 Request 对象池模式
 	RequestPoolMode bool
-	/*
-		logger
-	*/
-	LogDir string // The directory where log files are stored. The default value is "./log".(日志所在文件夹 默认"./log")
-
-	// The name of the log file. If it is empty, the log information will be printed to stderr.
-	// (日志文件名称   默认""  --如果没有设置日志文件，打印信息将打印至stderr)
-	LogFile string
-
-	LogSaveDays int   // 日志最大保留天数
-	LogFileSize int64 // 日志单个日志最大容量 默认 64MB,单位：字节，记得一定要换算成MB（1024 * 1024）
-	LogCons     bool  // 日志标准输出  默认 false
-
-	// The level of log isolation. The values can be 0 (all open), 1 (debug off), 2 (debug/info off), 3 (debug/info/warn off), and so on.
-	// 日志隔离级别  -- 0：全开 1：关debug 2：关debug/info 3：关debug/info/warn ...
-	LogIsolationLevel int
+	
 
 	/*
 		Keepalive
@@ -146,9 +131,9 @@ func (g *Config) Reload() {
 		// The configuration file may not exist,
 		// in which case the default parameters should be used to initialize the logging module configuration.
 		// (配置文件不存在也需要用默认参数初始化日志模块配置)
-		g.InitLogConfig()
+		
 
-		zlog.Ins().ErrorF("Config File %s is not exist!! \n You can set configFile by setting the environment variable %s, like export %s = xxx/xxx/zinx.conf ", confFilePath, EnvConfigFilePathKey, EnvConfigFilePathKey)
+		slog.Error(fmt.Sprintf("Config File %s is not exist!! \n You can set configFile by setting the environment variable %s, like export %s = xxx/xxx/zinx.conf ", confFilePath, EnvConfigFilePathKey, EnvConfigFilePathKey))
 		return
 	}
 
@@ -162,7 +147,7 @@ func (g *Config) Reload() {
 		panic(err)
 	}
 
-	g.InitLogConfig()
+	
 }
 
 // Show Zinx Config Info
@@ -170,45 +155,24 @@ func (g *Config) Show() {
 	objVal := reflect.ValueOf(g).Elem()
 	objType := reflect.TypeOf(*g)
 
-	fmt.Println("===== Zinx Global Config =====")
+	slog.Debug("===== Zinx Global Config =====")
 	for i := 0; i < objVal.NumField(); i++ {
 		field := objVal.Field(i)
 		typeField := objType.Field(i)
 
-		fmt.Printf("%s: %v\n", typeField.Name, field.Interface())
+		slog.Debug("config item", "key", typeField.Name, "value", field.Interface())
 	}
-	fmt.Println("==============================")
+	slog.Debug("==============================")
 }
 
 func (g *Config) HeartbeatMaxDuration() time.Duration {
 	return time.Duration(g.HeartbeatMax) * time.Second
 }
 
-func (g *Config) InitLogConfig() {
-	if g.LogFile != "" {
-		zlog.SetLogFile(g.LogDir, g.LogFile)
-		zlog.SetCons(g.LogCons)
-	}
-	if g.LogSaveDays > 0 {
-		zlog.SetMaxAge(g.LogSaveDays)
-	}
-	if g.LogFileSize > 0 {
-		zlog.SetMaxSize(g.LogFileSize)
-	}
-	if g.LogIsolationLevel > zlog.LogDebug {
-		zlog.SetLogLevel(g.LogIsolationLevel)
-	}
-}
-
 /*
 init, set default value
 */
 func init() {
-	pwd, err := os.Getwd()
-	if err != nil {
-		pwd = "."
-	}
-
 	// Note: Prevent errors like "flag provided but not defined: -test.paniconexit0" from occurring in go test.
 	// (防止 go test 出现"flag provided but not defined: -test.paniconexit0"等错误)
 	testing.Init()
@@ -229,9 +193,6 @@ func init() {
 		MaxWorkerTaskLen:  1024,
 		WorkerMode:        "",
 		MaxMsgChanLen:     1024,
-		LogDir:            pwd + "/log",
-		LogFile:           "", // if set "", print to Stderr(默认日志文件为空，打印到stderr)
-		LogIsolationLevel: 0,
 		HeartbeatMax:      10, // The default maximum interval for heartbeat detection is 10 seconds. (默认心跳检测最长间隔为10秒)
 		IOReadBuffSize:    1024,
 		CertFile:          "",

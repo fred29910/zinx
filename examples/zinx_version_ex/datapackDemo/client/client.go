@@ -1,16 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"github.com/aceld/zinx/zpack"
+	"log/slog"
 	"net"
+
+	"github.com/aceld/zinx/v3/zpack"
 )
 
 func main() {
 	//客户端goroutine，负责模拟粘包的数据，然后进行发送
 	conn, err := net.Dial("tcp", "127.0.0.1:7777")
 	if err != nil {
-		fmt.Println("client dial err:", err)
+		slog.Debug("client dial err:", "err", err)
 		return
 	}
 
@@ -26,7 +27,7 @@ func main() {
 
 	sendData1, err := dp.Pack(msg1)
 	if err != nil {
-		fmt.Println("client pack msg1 err:", err)
+		slog.Debug("client pack msg1 err:", "err", err)
 		return
 	}
 
@@ -37,7 +38,7 @@ func main() {
 	}
 	sendData2, err := dp.Pack(msg2)
 	if err != nil {
-		fmt.Println("client temp msg2 err:", err)
+		slog.Debug("client temp msg2 err:", "err", err)
 		return
 	}
 

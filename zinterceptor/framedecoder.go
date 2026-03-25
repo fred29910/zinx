@@ -10,8 +10,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/aceld/zinx/ziface"
 	"math"
+
+	"github.com/aceld/zinx/v3/ziface"
 )
 
 // FrameDecoder

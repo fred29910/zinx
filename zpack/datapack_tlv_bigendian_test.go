@@ -1,13 +1,13 @@
 package zpack
 
 import (
-	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"testing"
 	"time"
 
-	"github.com/aceld/zinx/ziface"
+	"github.com/aceld/zinx/v3/ziface"
 )
 
 // run in terminal:
@@ -18,7 +18,7 @@ func TestDataPack(t *testing.T) {
 	// Create a TCP server socket.
 	listener, err := net.Listen("tcp", "127.0.0.1:7777")
 	if err != nil {
-		fmt.Println("server listen err:", err)
+		slog.Debug("server listen err:", "err", err)
 		return
 	}
 
@@ -27,7 +27,7 @@ func TestDataPack(t *testing.T) {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				fmt.Println("server accept err:", err)
+				slog.Debug("server accept err:", "err", err)
 			}
 
 			// Handle client requests
@@ -39,12 +39,12 @@ func TestDataPack(t *testing.T) {
 					headData := make([]byte, dp.GetHeadLen())
 					_, err := io.ReadFull(conn, headData) // ReadFull will fill msg until it's full
 					if err != nil {
-						fmt.Println("read head error")
+						slog.Debug("read head error")
 					}
 					// Unpack the headData byte stream into msg.
 					msgHead, err := dp.Unpack(headData)
 					if err != nil {
-						fmt.Println("server unpack err:", err)
+						slog.Debug("server unpack err:", "err", err)
 						return
 					}
 
@@ -56,11 +56,11 @@ func TestDataPack(t *testing.T) {
 						// Read the byte stream from io based on dataLen.
 						_, err := io.ReadFull(conn, msg.Data)
 						if err != nil {
-							fmt.Println("server unpack data err:", err)
+							slog.Debug("server unpack data err:", "err", err)
 							return
 						}
 
-						fmt.Println("==> Recv Msg: ID=", msg.ID, ", len=", msg.DataLen, ", data=", string(msg.Data))
+						slog.Debug("==> Recv Msg", "ID", msg.ID, "len", msg.DataLen, "data", string(msg.Data))
 					}
 				}
 			}(conn)
@@ -71,7 +71,7 @@ func TestDataPack(t *testing.T) {
 	go func() {
 		conn, err := net.Dial("tcp", "127.0.0.1:7777")
 		if err != nil {
-			fmt.Println("client dial err:", err)
+			slog.Debug("client dial err:", "err", err)
 			return
 		}
 
@@ -87,7 +87,7 @@ func TestDataPack(t *testing.T) {
 
 		sendData1, err := dp.Pack(msg1)
 		if err != nil {
-			fmt.Println("client pack msg1 err:", err)
+			slog.Debug("client pack msg1 err:", "err", err)
 			return
 		}
 
@@ -99,7 +99,7 @@ func TestDataPack(t *testing.T) {
 		}
 		sendData2, err := dp.Pack(msg2)
 		if err != nil {
-			fmt.Println("client temp msg2 err:", err)
+			slog.Debug("client temp msg2 err:", "err", err)
 			return
 		}
 

@@ -1,10 +1,10 @@
 package router
 
 import (
-	"fmt"
+	"log/slog"
 
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // PingRouter handles ping messages
@@ -23,7 +23,7 @@ func (r *PingRouter) PreHandle(req ziface.IRequest) {
 func (r *PingRouter) Handle(req ziface.IRequest) {
 	// Reply to client / 回复客户端
 	if err := req.GetConnection().SendMsg(0, []byte("Pong")); err != nil {
-		fmt.Println("SendMsg error:", err)
+		slog.Debug("SendMsg error:", "err", err)
 	}
 }
 

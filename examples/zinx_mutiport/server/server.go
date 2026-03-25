@@ -1,19 +1,21 @@
 package main
 
 import (
+	"log/slog"
+
 	"fmt"
-	"github.com/aceld/zinx/examples/zinx_server/s_router"
-	"github.com/aceld/zinx/zconf"
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
-	"github.com/aceld/zinx/znet"
 	"os"
 	"os/signal"
+
+	"github.com/aceld/zinx/v3/examples/zinx_server/s_router"
+	"github.com/aceld/zinx/v3/zconf"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // Execute when creating a connection (创建连接的时候执行)
 func DoConnectionBegin(conn ziface.IConnection) {
-	zlog.Ins().InfoF("DoConnectionBegin is Called ...")
+	slog.Info("DoConnectionBegin is Called ...")
 
 	//设置两个连接属性，在连接创建之后
 	conn.SetProperty("Name", "Aceld")
@@ -21,7 +23,7 @@ func DoConnectionBegin(conn ziface.IConnection) {
 
 	err := conn.SendMsg(2, []byte("DoConnection BEGIN..."))
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }
 
@@ -30,14 +32,14 @@ func DoConnectionLost(conn ziface.IConnection) {
 	// Query the Name and Home properties of the conn before destroying the connectio
 	// 在连接销毁之前，查询conn的Name，Home属性
 	if name, err := conn.GetProperty("Name"); err == nil {
-		zlog.Ins().InfoF("Conn Property Name = %v", name)
+		slog.Info(fmt.Sprintf("Conn Property Name = %v", name))
 	}
 
 	if home, err := conn.GetProperty("Home"); err == nil {
-		zlog.Ins().InfoF("Conn Property Home = %v", home)
+		slog.Info(fmt.Sprintf("Conn Property Home = %v", home))
 	}
 
-	zlog.Ins().InfoF("Conn is Lost")
+	slog.Info("Conn is Lost")
 }
 
 func main() {
@@ -67,5 +69,5 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	sig := <-c
-	fmt.Println("===exit===", sig)
+	slog.Debug("exit", "sig", sig)
 }

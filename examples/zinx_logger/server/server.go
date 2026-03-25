@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
-	"github.com/aceld/zinx/znet"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 type TestRouter struct {
@@ -17,34 +16,35 @@ type TestRouter struct {
 func (t *TestRouter) PreHandle(req ziface.IRequest) {
 	start := time.Now()
 
-	fmt.Println("--> Call PreHandle")
+	slog.Debug("--> Call PreHandle")
 	if err := req.GetConnection().SendMsg(0, []byte("test1")); err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 	elapsed := time.Since(start)
-	fmt.Println("elapsed：", elapsed)
+	slog.Debug("elapsed", "elapsed", elapsed)
 }
 
 // Handle -
 func (t *TestRouter) Handle(req ziface.IRequest) {
-	fmt.Println("--> Call Handle")
+	slog.Debug("--> Call Handle")
 
 	if err := req.GetConnection().SendMsg(0, []byte("test2")); err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 
 // PostHandle -
 func (t *TestRouter) PostHandle(req ziface.IRequest) {
-	fmt.Println("--> Call PostHandle")
+	slog.Debug("--> Call PostHandle")
 	if err := req.GetConnection().SendMsg(0, []byte("test3")); err != nil {
-		fmt.Println(err)
+		slog.Debug("error occurred", "err", err)
 	}
 }
 
 func main() {
 	s := znet.NewServer()
 	s.AddRouter(1, &TestRouter{})
-	zlog.SetLogger(new(MyLogger))
+	// Note: Custom logger injection removed (zlog.SetLogger is no longer available).
+	// Use slog.SetDefault() to configure a custom slog handler if needed.
 	s.Serve()
 }

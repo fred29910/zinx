@@ -2,10 +2,10 @@ package znet
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/aceld/zinx/ziface"
-	"github.com/aceld/zinx/zlog"
+	"github.com/aceld/zinx/v3/ziface"
 )
 
 type HeartbeatChecker struct {
@@ -33,13 +33,13 @@ type HeatBeatDefaultRouter struct {
 }
 
 func (r *HeatBeatDefaultRouter) Handle(req ziface.IRequest) {
-	zlog.Ins().DebugF("Recv Heartbeat from %s, MsgID = %+v, Data = %s",
-		req.GetConnection().RemoteAddr(), req.GetMsgID(), string(req.GetData()))
+	slog.Debug("Recv Heartbeat", "from", req.GetConnection().RemoteAddr(),
+		"MsgID", req.GetMsgID(), "Data", string(req.GetData()))
 }
 
 func HeatBeatDefaultHandle(req ziface.IRequest) {
-	zlog.Ins().DebugF("Recv Heartbeat from %s, MsgID = %+v, Data = %s",
-		req.GetConnection().RemoteAddr(), req.GetMsgID(), string(req.GetData()))
+	slog.Debug("Recv Heartbeat", "from", req.GetConnection().RemoteAddr(),
+		"MsgID", req.GetMsgID(), "Data", string(req.GetData()))
 }
 
 func makeDefaultMsg(conn ziface.IConnection) []byte {
@@ -48,7 +48,7 @@ func makeDefaultMsg(conn ziface.IConnection) []byte {
 }
 
 func notAliveDefaultFunc(conn ziface.IConnection) {
-	zlog.Ins().InfoF("Remote connection %s is not alive, stop it", conn.RemoteAddr())
+	slog.Info("Remote connection is not alive, stop it", "RemoteAddr", conn.RemoteAddr())
 	conn.Stop()
 }
 
@@ -120,7 +120,7 @@ func (h *HeartbeatChecker) Start() {
 }
 
 func (h *HeartbeatChecker) Stop() {
-	zlog.Ins().InfoF("heartbeat checker stop, connID=%+v", h.conn.GetConnID())
+	slog.Info("heartbeat checker stop", "connID", h.conn.GetConnID())
 	h.quitChan <- true
 }
 
@@ -130,7 +130,7 @@ func (h *HeartbeatChecker) SendHeartBeatMsg() error {
 
 	err := h.conn.SendMsg(h.msgID, msg)
 	if err != nil {
-		zlog.Ins().ErrorF("send heartbeat msg error: %v, msgId=%+v msg=%+v", err, h.msgID, msg)
+		slog.Error("send heartbeat msg error", "err", err, "msgId", h.msgID, "msg", msg)
 		return err
 	}
 
