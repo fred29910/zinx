@@ -1,12 +1,12 @@
 package znotify
 
 import (
+	"log/slog"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/zutils"
 )
 
@@ -80,7 +80,7 @@ func (n *notify) NotifyAll(MsgId uint32, data []byte) error {
 		conn, _ := v.(ziface.IConnection)
 		err := conn.SendMsg(MsgId, data)
 		if err != nil {
-			zlog.Ins().ErrorF("Notify to %s err:%s \n", key, err)
+			slog.Error(fmt.Sprintf("Notify to %s err:%s \n", key, err))
 		}
 	})
 
@@ -94,7 +94,7 @@ func (n *notify) NotifyBuffToConnByID(Id uint64, MsgId uint32, data []byte) erro
 	}
 	err = Conn.SendBuffMsg(MsgId, data)
 	if err != nil {
-		zlog.Ins().ErrorF("Notify to %d err:%s \n", Id, err)
+		slog.Error(fmt.Sprintf("Notify to %d err:%s \n", Id, err))
 		return err
 	}
 	return nil
@@ -106,7 +106,7 @@ func (n *notify) NotifyBuffAll(MsgId uint32, data []byte) error {
 		conn, _ := v.(ziface.IConnection)
 		err := conn.SendBuffMsg(MsgId, data)
 		if err != nil {
-			zlog.Ins().ErrorF("Notify to %s err:%s \n", key, err)
+			slog.Error(fmt.Sprintf("Notify to %s err:%s \n", key, err))
 		}
 	})
 

@@ -1,8 +1,9 @@
 package router
 
 import (
+	"log/slog"
+
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
@@ -11,5 +12,5 @@ type HelloRouter struct {
 }
 
 func (hr *HelloRouter) Handle(request ziface.IRequest) {
-	zlog.Ins().InfoF(string(request.GetData()))
+	slog.Info(string(request.GetData()))
 }

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
+
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
@@ -25,34 +27,34 @@ type PongRouter struct {
 // DynamicBind工作模式下，client2, client3 都会立马收到pong, 但client1的pong会被阻塞十秒后才收到
 func (p *PongRouter) Handle(request ziface.IRequest) {
 	//read server pong data
-	zlog.Infof("---------client:%s, recv from server:%s, msgId=%d, data=%s ----------\n",
-		p.client, request.GetConnection().RemoteAddr(), request.GetMsgID(), string(request.GetData()))
+	slog.Info(fmt.Sprintf("---------client:%s, recv from server:%s, msgId=%d, data=%s ----------\n",
+		p.client, request.GetConnection().RemoteAddr(), request.GetMsgID(), string(request.GetData())))
 }
 
 func onClient1Start(conn ziface.IConnection) {
-	zlog.Infof("client1 connection start, %s->%s\n", conn.LocalAddrString(), conn.RemoteAddrString())
+	slog.Info(fmt.Sprintf("client1 connection start, %s->%s\n", conn.LocalAddrString(), conn.RemoteAddrString()))
 	//send ping
 	err := conn.SendMsg(PingType, []byte("Ping From Client1"))
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }
 
 func onClient2Start(conn ziface.IConnection) {
-	zlog.Infof("client2 connection start, %s->%s\n", conn.LocalAddrString(), conn.RemoteAddrString())
+	slog.Info(fmt.Sprintf("client2 connection start, %s->%s\n", conn.LocalAddrString(), conn.RemoteAddrString()))
 	//send ping
 	err := conn.SendMsg(PingType, []byte("Ping From Client2"))
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }
 
 func onClient3Start(conn ziface.IConnection) {
-	zlog.Infof("client3 connection start, %s->%s\n", conn.LocalAddrString(), conn.RemoteAddrString())
+	slog.Info(fmt.Sprintf("client3 connection start, %s->%s\n", conn.LocalAddrString(), conn.RemoteAddrString()))
 	//send ping
 	err := conn.SendMsg(PingType, []byte("Ping From Client3"))
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }
 

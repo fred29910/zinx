@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log/slog"
+
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -9,7 +11,6 @@ import (
 	"time"
 
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
@@ -95,7 +96,7 @@ func business(conn ziface.IConnection) {
 }
 
 func DoClientConnectedBegin(conn ziface.IConnection) {
-	zlog.Debug("DoConnectionBegin is Called ... ")
+	slog.Debug("DoConnectionBegin is Called ... ")
 	go business(conn)
 }
 

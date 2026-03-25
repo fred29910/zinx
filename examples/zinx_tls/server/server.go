@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
+
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -13,7 +16,6 @@ import (
 
 	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
@@ -25,12 +27,12 @@ type PingRouter struct {
 // Handle Ping Handle
 func (this *PingRouter) Handle(request ziface.IRequest) {
 
-	zlog.Debug("Call PingRouter Handle")
-	zlog.Debug("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
+	slog.Debug("Call PingRouter Handle")
+	slog.Debug(fmt.Sprint("recv from client : msgId=", request.GetMsgID()), ", data=", string(request.GetData()))
 
 	err := request.GetConnection().SendBuffMsg(2, []byte("Pong with TLS"), ziface.WithSendMsgTimeout(time.Millisecond*10))
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }
 

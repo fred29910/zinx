@@ -6,14 +6,17 @@
 package zconf
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/aceld/zinx/v3/zlog"
+	"github.com/aceld/zinx/v3/zutils"
 )
 
 const (
@@ -148,7 +151,7 @@ func (g *Config) Reload() {
 		// (配置文件不存在也需要用默认参数初始化日志模块配置)
 		g.InitLogConfig()
 
-		zlog.Ins().ErrorF("Config File %s is not exist!! \n You can set configFile by setting the environment variable %s, like export %s = xxx/xxx/zinx.conf ", confFilePath, EnvConfigFilePathKey, EnvConfigFilePathKey)
+		slog.Error(fmt.Sprintf("Config File %s is not exist!! \n You can set configFile by setting the environment variable %s, like export %s = xxx/xxx/zinx.conf ", confFilePath, EnvConfigFilePathKey, EnvConfigFilePathKey))
 		return
 	}
 
@@ -184,19 +187,65 @@ func (g *Config) HeartbeatMaxDuration() time.Duration {
 	return time.Duration(g.HeartbeatMax) * time.Second
 }
 
+// zinxLogHandler is the package-level slog handler for zconf-driven log config.
+// It is set by InitLogConfig and used to configure the global slog logger.
+var zinxLogHandler *zinxConfHandler
+
+// zinxConfHandler wraps a zutils.Writer to implement slog.Handler for file rotation.
+type zinxConfHandler struct {
+	inner slog.Handler
+	fw    *zutils.Writer
+}
+
+func (h *zinxConfHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.inner.Enabled(ctx, level)
+}
+func (h *zinxConfHandler) Handle(ctx context.Context, r slog.Record) error {
+	return h.inner.Handle(ctx, r)
+}
+func (h *zinxConfHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &zinxConfHandler{inner: h.inner.WithAttrs(attrs), fw: h.fw}
+}
+func (h *zinxConfHandler) WithGroup(name string) slog.Handler {
+	return &zinxConfHandler{inner: h.inner.WithGroup(name), fw: h.fw}
+}
+
 func (g *Config) InitLogConfig() {
 	if g.LogFile != "" {
-		zlog.SetLogFile(g.LogDir, g.LogFile)
-		zlog.SetCons(g.LogCons)
+		fw := zutils.New(filepath.Join(g.LogDir, g.LogFile))
+		if g.LogCons {
+			fw.SetCons(true)
+		}
+		if g.LogSaveDays > 0 {
+			fw.SetMaxAge(g.LogSaveDays)
+		}
+		if g.LogFileSize > 0 {
+			fw.SetMaxSize(g.LogFileSize)
+		}
+		h := slog.NewTextHandler(fw, &slog.HandlerOptions{
+			Level: isolationLevelToSlog(g.LogIsolationLevel),
+		})
+		slog.SetDefault(slog.New(h))
+	} else if g.LogIsolationLevel > 0 {
+		h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: isolationLevelToSlog(g.LogIsolationLevel),
+		})
+		slog.SetDefault(slog.New(h))
 	}
-	if g.LogSaveDays > 0 {
-		zlog.SetMaxAge(g.LogSaveDays)
-	}
-	if g.LogFileSize > 0 {
-		zlog.SetMaxSize(g.LogFileSize)
-	}
-	if g.LogIsolationLevel > zlog.LogDebug {
-		zlog.SetLogLevel(g.LogIsolationLevel)
+}
+
+// isolationLevelToSlog converts a zinx log isolation level (int) to slog.Level.
+// 0=Debug, 1=Info, 2=Warn, 3+=Error
+func isolationLevelToSlog(level int) slog.Level {
+	switch level {
+	case 0:
+		return slog.LevelDebug
+	case 1:
+		return slog.LevelInfo
+	case 2:
+		return slog.LevelWarn
+	default:
+		return slog.LevelError
 	}
 }
 

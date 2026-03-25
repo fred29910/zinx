@@ -1,6 +1,8 @@
 package znet
 
 import (
+	"fmt"
+	"log/slog"
 	"bufio"
 	"context"
 	"encoding/hex"
@@ -14,7 +16,6 @@ import (
 	"github.com/aceld/zinx/v3/zconf"
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/zinterceptor"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/zpack"
 
 	"github.com/gorilla/websocket"
@@ -195,10 +196,10 @@ func newClientConn(client ziface.IClient, conn net.Conn) ziface.IConnection {
 // StartWriter is the goroutine that writes messages to the client
 // (写消息Goroutine， 用户将数据发送给客户端)
 func (c *Connection) StartWriter() {
-	zlog.Ins().InfoF("Writer Goroutine is running")
+	slog.Info(fmt.Sprintf("Writer Goroutine is running"))
 	ticker := time.NewTicker(10 * time.Millisecond)
 	defer func() {
-		zlog.Ins().InfoF("%s [conn Writer exit!]", c.RemoteAddr().String())
+		slog.Info(fmt.Sprintf("%s [conn Writer exit!]", c.RemoteAddr().String()))
 		ticker.Stop()
 		c.Flush()
 	}()
@@ -207,17 +208,17 @@ func (c *Connection) StartWriter() {
 		case <-ticker.C:
 			err := c.Flush()
 			if err != nil {
-				zlog.Ins().ErrorF("Flush Buff Data error: %v Conn Writer exit", err)
+				slog.Error(fmt.Sprintf("Flush Buff Data error: %v Conn Writer exit", err))
 				return
 			}
 		case data, ok := <-c.msgBuffChan:
 			if ok {
 				if err := c.SendBuf(data); err != nil {
-					zlog.Ins().ErrorF("Send Buff Data error:, %s Conn Writer exit", err)
+					slog.Error(fmt.Sprintf("Send Buff Data error:, %s Conn Writer exit", err))
 					return
 				}
 			} else {
-				zlog.Ins().ErrorF("msgBuffChan is Closed")
+				slog.Error(fmt.Sprintf("msgBuffChan is Closed"))
 				return
 			}
 		case <-c.ctx.Done():
@@ -229,12 +230,12 @@ func (c *Connection) StartWriter() {
 // StartReader is a goroutine that reads data from the client
 // (读消息Goroutine，用于从客户端中读取数据)
 func (c *Connection) StartReader() {
-	zlog.Ins().InfoF("[Reader Goroutine is running]")
-	defer zlog.Ins().InfoF("%s [conn Reader exit!]", c.RemoteAddr().String())
+	slog.Info(fmt.Sprintf("[Reader Goroutine is running]"))
+	defer slog.Info(fmt.Sprintf("%s [conn Reader exit!]", c.RemoteAddr().String()))
 	defer c.Stop()
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Ins().ErrorF("connID=%d, panic err=%v", c.GetConnID(), err)
+			slog.Error(fmt.Sprintf("connID=%d, panic err=%v", c.GetConnID(), err))
 		}
 	}()
 
@@ -252,10 +253,10 @@ func (c *Connection) StartReader() {
 			// (从conn的IO中读取数据到内存缓冲buffer中)
 			n, err := c.conn.Read(buffer)
 			if err != nil {
-				zlog.Ins().ErrorF("read msg head [read datalen=%d], error = %s", n, err)
+				slog.Error(fmt.Sprintf("read msg head [read datalen=%d], error = %s", n, err))
 				return
 			}
-			zlog.Ins().DebugF("read buffer %s \n", hex.EncodeToString(buffer[0:n]))
+			slog.Debug(fmt.Sprintf("read buffer %s \n", hex.EncodeToString(buffer[0:n])))
 
 			// If normal data is read from the peer, update the heartbeat detection Active state
 			// (正常读取到对端数据，更新心跳检测Active状态)
@@ -273,7 +274,7 @@ func (c *Connection) StartReader() {
 					continue
 				}
 				for _, bytes := range bufArrays {
-					// zlog.Ins().DebugF("read buffer %s \n", hex.EncodeToString(bytes))
+					// slog.Debug(fmt.Sprintf("read buffer %s \n", hex.EncodeToString(bytes)))
 					msg := zpack.NewMessage(uint32(len(bytes)), bytes)
 					// Get the current client's Request data
 					// (得到当前客户端请求的Request数据)
@@ -296,7 +297,7 @@ func (c *Connection) StartReader() {
 func (c *Connection) Start() {
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Ins().ErrorF("Connection Start() error: %v", err)
+			slog.Error(fmt.Sprintf("Connection Start() error: %v", err))
 		}
 	}()
 	c.ctx, c.cancel = context.WithCancel(context.Background())
@@ -380,7 +381,7 @@ func (c *Connection) Send(data []byte) error {
 	}
 	_, err := c.conn.Write(data)
 	if err != nil {
-		zlog.Ins().ErrorF("SendMsg err data = %+v, err = %+v", data, err)
+		slog.Error(fmt.Sprintf("SendMsg err data = %+v, err = %+v", data, err))
 		return err
 	}
 	return nil
@@ -392,7 +393,7 @@ func (c *Connection) SendBuf(data []byte) error {
 	}
 	_, err := c.bufWriter.Write(data)
 	if err != nil {
-		zlog.Ins().ErrorF("SendMsg err data = %+v, err = %+v", data, err)
+		slog.Error(fmt.Sprintf("SendMsg err data = %+v, err = %+v", data, err))
 		return err
 	}
 	return nil
@@ -425,7 +426,7 @@ func (c *Connection) SendToQueue(data []byte, opts ...ziface.MsgSendOption) erro
 	}
 
 	if data == nil {
-		zlog.Ins().ErrorF("Pack data is nil")
+		slog.Error(fmt.Sprintf("Pack data is nil"))
 		return errors.New("Pack data is nil")
 	}
 
@@ -452,13 +453,13 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 	// Pack data and send it
 	msg, err := c.packet.Pack(zpack.NewMsgPackage(msgID, data))
 	if err != nil {
-		zlog.Ins().ErrorF("Pack error msg ID = %d", msgID)
+		slog.Error(fmt.Sprintf("Pack error msg ID = %d", msgID))
 		return errors.New("Pack error msg ")
 	}
 
 	err = c.Send(msg)
 	if err != nil {
-		zlog.Ins().ErrorF("SendMsg err msg ID = %d, data = %+v, err = %+v", msgID, string(msg), err)
+		slog.Error(fmt.Sprintf("SendMsg err msg ID = %d, data = %+v, err = %+v", msgID, string(msg), err))
 		return err
 	}
 
@@ -468,7 +469,7 @@ func (c *Connection) SendMsg(msgID uint32, data []byte) error {
 func (c *Connection) SendBuffMsg(msgID uint32, data []byte, opts ...ziface.MsgSendOption) error {
 	msg, err := c.packet.Pack(zpack.NewMsgPackage(msgID, data))
 	if err != nil {
-		zlog.Ins().ErrorF("Pack error msg ID = %d", msgID)
+		slog.Error(fmt.Sprintf("Pack error msg ID = %d", msgID))
 		return errors.New("Pack error msg ")
 	}
 	return c.SendToQueue(msg, opts...)
@@ -528,26 +529,26 @@ func (c *Connection) finalizer() {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				zlog.Ins().ErrorF("Conn finalizer panic: %v", err)
+				slog.Error(fmt.Sprintf("Conn finalizer panic: %v", err))
 			}
 		}()
 
 		c.InvokeCloseCallbacks()
 	}()
 
-	zlog.Ins().InfoF("Conn Stop()...ConnID = %d", c.connID)
+	slog.Info(fmt.Sprintf("Conn Stop()...ConnID = %d", c.connID))
 }
 
 func (c *Connection) callOnConnStart() {
 	if c.onConnStart != nil {
-		zlog.Ins().InfoF("ZINX CallOnConnStart....")
+		slog.Info(fmt.Sprintf("ZINX CallOnConnStart...."))
 		c.onConnStart(c)
 	}
 }
 
 func (c *Connection) callOnConnStop() {
 	if c.onConnStop != nil {
-		zlog.Ins().InfoF("ZINX CallOnConnStop....")
+		slog.Info(fmt.Sprintf("ZINX CallOnConnStop...."))
 		c.onConnStop(c)
 	}
 }

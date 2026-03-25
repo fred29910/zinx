@@ -8,10 +8,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/aceld/zinx/v3/zpack"
 	"io"
 	"net"
 	"time"
+
+	"github.com/aceld/zinx/v3/zpack"
 )
 
 func main() {

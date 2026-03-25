@@ -17,7 +17,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 )
 
 // RecoveryMiddleware returns a middleware that recovers from panics and logs the error
@@ -28,7 +27,7 @@ func RecoveryMiddleware() ziface.HandlerFunc {
 			if err := recover(); err != nil {
 				// Log the panic with stack trace
 				// (记录panic和堆栈信息)
-				zlog.Ins().ErrorF("Panic recovered: %v\n%s", err, debug.Stack())
+				slog.Error(fmt.Sprintf("Panic recovered: %v\n%s", err, debug.Stack()))
 
 				// Abort the middleware chain
 				// (中止中间件链)
@@ -55,8 +54,8 @@ func LoggingMiddleware() ziface.HandlerFunc {
 		// Log request information after processing
 		// (处理后记录请求信息)
 		latency := time.Since(start)
-		zlog.Ins().InfoF("MessageID: %d, ConnectionID: %d, Latency: %v",
-			c.MsgID, c.Conn.GetConnID(), latency)
+		slog.Info(fmt.Sprintf("MessageID: %d, ConnectionID: %d, Latency: %v",
+			c.MsgID, c.Conn.GetConnID(), latency))
 	}
 }
 
@@ -68,7 +67,7 @@ func AuthMiddleware() ziface.HandlerFunc {
 		// (示例：检查context中的认证token)
 		token, exists := c.Get("auth_token")
 		if !exists {
-			zlog.Ins().ErrorF("Authentication failed: no token found")
+			slog.Error("Authentication failed: no token found")
 			c.Abort()
 			return
 		}
@@ -76,7 +75,7 @@ func AuthMiddleware() ziface.HandlerFunc {
 		// Validate token (simplified example)
 		// (验证token（简化示例）)
 		if token == "" {
-			zlog.Ins().ErrorF("Authentication failed: invalid token")
+			slog.Error("Authentication failed: invalid token")
 			c.Abort()
 			return
 		}
@@ -125,7 +124,7 @@ func TraceMiddleware() ziface.HandlerFunc {
 		traceID := fmt.Sprintf("trace-%d-%d", c.Conn.GetConnID(), c.MsgID)
 		c.Set("trace_id", traceID)
 
-		zlog.Ins().DebugF("Trace started: %s", traceID)
+		slog.Debug(fmt.Sprintf("Trace started: %s", traceID))
 
 		// Continue to the next middleware
 		// (继续执行下一个中间件)
@@ -133,7 +132,7 @@ func TraceMiddleware() ziface.HandlerFunc {
 
 		// After processing, you could end the span here
 		// (处理后，您可以在这里结束span)
-		zlog.Ins().DebugF("Trace ended: %s", traceID)
+		slog.Debug(fmt.Sprintf("Trace ended: %s", traceID))
 	}
 }
 
@@ -178,7 +177,7 @@ func TimeoutMiddleware(timeout time.Duration) ziface.HandlerFunc {
 		case <-time.After(timeout):
 			// Timeout occurred
 			// (发生超时)
-			zlog.Ins().ErrorF("Request timeout after %v", timeout)
+			slog.Error(fmt.Sprintf("Request timeout after %v", timeout))
 			c.Abort()
 		}
 	}

@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/znet"
-	"time"
 )
 
 // User-defined heartbeat message processing method

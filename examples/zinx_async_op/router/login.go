@@ -1,6 +1,8 @@
 package router
 
 import (
+	"log/slog"
+
 	"encoding/json"
 	"time"
 
@@ -8,7 +10,6 @@ import (
 	"github.com/aceld/zinx/v3/examples/zinx_async_op/db_model"
 	"github.com/aceld/zinx/v3/examples/zinx_async_op/msg_struct"
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
@@ -17,7 +18,7 @@ type LoginRouter struct {
 }
 
 func (hr *LoginRouter) Handle(request ziface.IRequest) {
-	zlog.Debug("AsyncOpRouter Handle IN ===>111")
+	slog.Debug("AsyncOpRouter Handle IN ===>111")
 
 	asyncResult := async_op_apis.AsyncUserSaveData(request) // // Test DB asynchronous operation(测试DB异步操作)
 
@@ -27,10 +28,10 @@ func (hr *LoginRouter) Handle(request ziface.IRequest) {
 
 	// Asynchronous callback (异步回调)
 	asyncResult.OnComplete(func() {
-		zlog.Debug("OnComplete IN===>333")
+		slog.Debug("OnComplete IN===>333")
 		returnedObj := asyncResult.GetReturnedObj()
 		if returnedObj == nil {
-			zlog.Debug("The asynchronous result has not been set when registering the callback function.")
+			slog.Debug("The asynchronous result has not been set when registering the callback function.")
 			return
 		}
 
@@ -44,17 +45,17 @@ func (hr *LoginRouter) Handle(request ziface.IRequest) {
 
 		marshalData, marErr := json.Marshal(userLoginRsp)
 		if marErr != nil {
-			zlog.Error("LoginRouter marErr", marErr.Error())
+			slog.Error("LoginRouter marErr", "detail", marErr.Error())
 			return
 		}
 
 		// Send response to the client
 		conn := request.GetConnection()
 		if sendErr := conn.SendMsg(1, marshalData); sendErr != nil {
-			zlog.Error("LoginRouter sendErr", sendErr.Error())
+			slog.Error("LoginRouter sendErr", "detail", sendErr.Error())
 			return
 		}
-		zlog.Debug("OnComplete OUT===>333")
+		slog.Debug("OnComplete OUT===>333")
 
 		// Test actively throwing an exception (测试主动异常)
 		/*
@@ -70,5 +71,5 @@ func (hr *LoginRouter) Handle(request ziface.IRequest) {
 	// 测试：原来所属的线程阻塞3秒，回调函数因为是回到原来所属的线程里执行的，所以一定在3秒后执行.
 	time.Sleep(time.Second * 3)
 
-	zlog.Debug("AsyncOpRouter Handle OUT ===>111")
+	slog.Debug("AsyncOpRouter Handle OUT ===>111")
 }

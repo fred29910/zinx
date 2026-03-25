@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/aceld/zinx/v3/zpack"
 	"io"
 	"net"
+
+	"github.com/aceld/zinx/v3/zpack"
 )
 
 // 只是负责测试datapack拆包，封包功能

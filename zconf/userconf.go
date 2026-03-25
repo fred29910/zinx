@@ -1,7 +1,5 @@
 package zconf
 
-import "github.com/aceld/zinx/v3/zlog"
-
 // UserConfToGlobal, Note that if UserConf is used,
 // the method should be called to synchronize with GlobalConfObject
 // because other parameters are called from this structure parameter.
@@ -46,12 +44,10 @@ func UserConfToGlobal(config *Config) {
 		GlobalObject.IOReadBuffSize = config.IOReadBuffSize
 	}
 
-	// logger
-	// By default, it is False. If the config is not initialized, the default configuration will be used.
-	// (默认是False, config没有初始化即使用默认配置)
+	// logger — apply isolation level via slog (0=Debug is default, no change needed)
 	GlobalObject.LogIsolationLevel = config.LogIsolationLevel
-	if GlobalObject.LogIsolationLevel > zlog.LogDebug {
-		zlog.SetLogLevel(GlobalObject.LogIsolationLevel)
+	if GlobalObject.LogIsolationLevel > 0 {
+		GlobalObject.InitLogConfig()
 	}
 
 	// Different from the required fields mentioned above, the logging module should use the default configuration if it is not configured.
@@ -62,7 +58,7 @@ func UserConfToGlobal(config *Config) {
 
 	if config.LogFile != "" {
 		GlobalObject.LogFile = config.LogFile
-		zlog.SetLogFile(GlobalObject.LogDir, GlobalObject.LogFile)
+		GlobalObject.InitLogConfig()
 	}
 	if config.LogSaveDays > 0 {
 		GlobalObject.LogSaveDays = config.LogSaveDays

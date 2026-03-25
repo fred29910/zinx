@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
@@ -45,6 +44,7 @@ func (t *TestRouter) PostHandle(req ziface.IRequest) {
 func main() {
 	s := znet.NewServer()
 	s.AddRouter(1, &TestRouter{})
-	zlog.SetLogger(new(MyLogger))
+	// Note: Custom logger injection removed (zlog.SetLogger is no longer available).
+	// Use slog.SetDefault() to configure a custom slog handler if needed.
 	s.Serve()
 }

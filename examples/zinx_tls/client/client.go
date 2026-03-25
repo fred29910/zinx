@@ -1,13 +1,15 @@
 package main
 
 import (
+	"log/slog"
+
 	"fmt"
-	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
-	"github.com/aceld/zinx/v3/znet"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 // PongRouter pong test 自定义路由
@@ -18,9 +20,9 @@ type PongRouter struct {
 // Handle Pong Handle
 func (this *PongRouter) Handle(request ziface.IRequest) {
 
-	zlog.Debug("Call PongRouter Handle")
+	slog.Debug("Call PongRouter Handle")
 	//先读取服务器返回的数据
-	zlog.Debug("recv from client : msgId=", request.GetMsgID(), ", data=", string(request.GetData()))
+	slog.Debug(fmt.Sprint("recv from client : msgId=", request.GetMsgID()), ", data=", string(request.GetData()))
 
 }
 

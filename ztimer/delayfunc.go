@@ -6,10 +6,10 @@ package ztimer
 * @Mail: danbing.at@gmail.com
  */
 import (
+	"log/slog"
 	"fmt"
 	"reflect"
 
-	"github.com/aceld/zinx/v3/zlog"
 )
 
 /*
@@ -41,7 +41,7 @@ func (df *DelayFunc) String() string {
 func (df *DelayFunc) Call() {
 	defer func() {
 		if err := recover(); err != nil {
-			zlog.Ins().ErrorF("%s Call err: %v", df.String(), err)
+			slog.Error(fmt.Sprintf("%s Call err: %v", df.String(), err))
 		}
 	}()
 

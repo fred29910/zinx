@@ -1,14 +1,16 @@
 package main
 
 import (
+	"log/slog"
+
 	"fmt"
-	"github.com/aceld/zinx/v3/examples/zinx_client/c_router"
-	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
-	"github.com/aceld/zinx/v3/znet"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/aceld/zinx/v3/examples/zinx_client/c_router"
+	"github.com/aceld/zinx/v3/ziface"
+	"github.com/aceld/zinx/v3/znet"
 )
 
 type PositionClientRouter struct {
@@ -62,7 +64,7 @@ func main() {
 	select {
 	case err := <-client.GetErrChan():
 		// Handle the errors returned by the client.(处理客户端返回的错误)
-		zlog.Ins().ErrorF("client err:%v", err)
+		slog.Error(fmt.Sprintf("client err:%v", err))
 	}
 
 	// close

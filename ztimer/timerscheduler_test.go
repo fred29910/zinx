@@ -9,12 +9,12 @@ package ztimer
  */
 
 import (
+	"log/slog"
 	"fmt"
 	"log"
 	"testing"
 	"time"
 
-	"github.com/aceld/zinx/v3/zlog"
 )
 
 // 触发函数
@@ -32,7 +32,7 @@ func TestNewTimerScheduler(t *testing.T) {
 		f := NewDelayFunc(foo, []interface{}{i, i * 3})
 		tID, err := timerScheduler.CreateTimerAfter(f, time.Duration(3*i)*time.Millisecond)
 		if err != nil {
-			zlog.Error("create timer error", tID, err)
+			slog.Error(fmt.Sprint("create timer error ", tID, " ", err))
 			break
 		}
 	}
@@ -58,7 +58,7 @@ func TestNewAutoExecTimerScheduler(t *testing.T) {
 		f := NewDelayFunc(foo, []interface{}{i, i * 3})
 		tID, err := autoTS.CreateTimerAfter(f, time.Duration(3*i)*time.Millisecond)
 		if err != nil {
-			zlog.Error("create timer error", tID, err)
+			slog.Error(fmt.Sprint("create timer error ", tID, " ", err))
 			break
 		}
 	}

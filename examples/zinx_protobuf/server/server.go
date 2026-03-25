@@ -1,11 +1,12 @@
 package main
 
 import (
+	"log/slog"
+
 	"fmt"
 
 	"github.com/aceld/zinx/v3/ziface"
 	"github.com/aceld/zinx/v3/zinx_app_demo/mmo_game/pb"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 	"github.com/golang/protobuf/proto"
 )
@@ -40,7 +41,7 @@ func (this *PositionServerRouter) Handle(request ziface.IRequest) {
 	err = request.GetConnection().SendMsg(0, data)
 
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }
 

@@ -1,8 +1,10 @@
 package s_router
 
 import (
+	"fmt"
+	"log/slog"
+
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
@@ -14,12 +16,12 @@ type PingRouter struct {
 // Ping Handle
 func (this *PingRouter) Handle(request ziface.IRequest) {
 
-	zlog.Ins().DebugF("Call PingRouter Handle")
+	slog.Debug("Call PingRouter Handle")
 	// Read the data from the client first, then send back "ping...ping...ping".
-	zlog.Ins().DebugF("recv from client : msgId=%d, data=%+v, len=%d", request.GetMsgID(), string(request.GetData()), len(request.GetData()))
+	slog.Debug(fmt.Sprintf("recv from client : msgId=%d, data=%+v, len=%d", request.GetMsgID(), string(request.GetData()), len(request.GetData())))
 
 	err := request.GetConnection().SendMsg(2, []byte("pong-server"))
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }

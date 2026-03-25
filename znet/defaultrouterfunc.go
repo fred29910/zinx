@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"log/slog"
 	"bytes"
 	"fmt"
 	"path"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 )
 
 const (
@@ -34,7 +34,7 @@ func RouterRecovery(request ziface.IRequest) {
 		if err := recover(); err != nil {
 			panicInfo := getInfo(StackBegin)
 			// Record the error
-			zlog.Ins().ErrorF("MsgId:%d Handler panic: info:%s err:%v", request.GetMsgID(), panicInfo, err)
+			slog.Error(fmt.Sprintf("MsgId:%d Handler panic: info:%s err:%v", request.GetMsgID(), panicInfo, err))
 
 			//fmt.Printf("MsgId:%d Handler panic: info:%s err:%v", request.GetMsgID(), panicInfo, err)
 

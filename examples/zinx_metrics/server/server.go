@@ -1,34 +1,36 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
+
 	"github.com/aceld/zinx/v3/examples/zinx_server/s_router"
 	"github.com/aceld/zinx/v3/ziface"
-	"github.com/aceld/zinx/v3/zlog"
 	"github.com/aceld/zinx/v3/znet"
 )
 
 func DoConnectionBegin(conn ziface.IConnection) {
-	zlog.Ins().InfoF("DoConnectionBegin is Called ...")
+	slog.Info("DoConnectionBegin is Called ...")
 
 	conn.SetProperty("Name", "Aceld")
 	conn.SetProperty("Home", "https://yuque.com/aceld")
 
 	err := conn.SendMsg(2, []byte("DoConnection BEGIN..."))
 	if err != nil {
-		zlog.Error(err)
+		slog.Error("error", "err", err)
 	}
 }
 
 func DoConnectionLost(conn ziface.IConnection) {
 	if name, err := conn.GetProperty("Name"); err == nil {
-		zlog.Ins().InfoF("Conn Property Name = %v", name)
+		slog.Info(fmt.Sprintf("Conn Property Name = %v", name))
 	}
 
 	if home, err := conn.GetProperty("Home"); err == nil {
-		zlog.Ins().InfoF("Conn Property Home = %v", home)
+		slog.Info(fmt.Sprintf("Conn Property Home = %v", home))
 	}
 
-	zlog.Ins().InfoF("Conn is Lost")
+	slog.Info("Conn is Lost")
 }
 
 // usage:$  curl 0.0.0.0:20004/metrics

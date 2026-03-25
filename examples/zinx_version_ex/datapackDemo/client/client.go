@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/aceld/zinx/v3/zpack"
 	"net"
+
+	"github.com/aceld/zinx/v3/zpack"
 )
 
 func main() {

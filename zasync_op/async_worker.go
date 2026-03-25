@@ -6,7 +6,11 @@
 
 package zasync_op
 
-import "github.com/aceld/zinx/v3/zlog"
+import (
+	"fmt"
+	"log/slog"
+)
+
 
 type AsyncWorker struct {
 	taskQ chan func()
@@ -14,19 +18,19 @@ type AsyncWorker struct {
 
 func (aw *AsyncWorker) process(asyncOp func()) {
 	if asyncOp == nil {
-		zlog.Error("Async operation is empty.")
+		slog.Error(fmt.Sprintf("%v", "Async operation is empty."))
 		return
 	}
 
 	if aw.taskQ == nil {
-		zlog.Error("Task queue has not been initialized.")
+		slog.Error(fmt.Sprintf("%v", "Task queue has not been initialized."))
 		return
 	}
 
 	aw.taskQ <- func() {
 		defer func() {
 			if err := recover(); err != nil {
-				zlog.Ins().ErrorF("async process panic: %v", err)
+				slog.Error(fmt.Sprintf("async process panic: %v", err))
 			}
 		}()
 
@@ -37,7 +41,7 @@ func (aw *AsyncWorker) process(asyncOp func()) {
 
 func (aw *AsyncWorker) loopExecTask() {
 	if aw.taskQ == nil {
-		zlog.Error("The task queue has not been initialized.")
+		slog.Error(fmt.Sprintf("%v", "The task queue has not been initialized."))
 		return
 	}
 
