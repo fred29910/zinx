@@ -258,9 +258,8 @@ func freeWorker(conn ziface.IConnection) {
 func (mh *MsgHandle) Intercept(chain ziface.IChain) ziface.IcResp {
 	request := chain.Request()
 	if request != nil {
-		switch request.(type) {
+		switch iRequest := request.(type) {
 		case ziface.IRequest:
-			iRequest := request.(ziface.IRequest)
 			if mh.WorkerPoolSize > 0 {
 				// If the worker pool mechanism has been started, hand over the message to the worker for processing
 				// (已经启动工作池机制，将消息交给Worker处理)
@@ -424,42 +423,35 @@ func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest
 	slog.Debug("Worker started", "workerID", workerID)
 	// Continuously wait for messages in the queue
 	// (不断地等待队列中的消息)
-	for {
-		select {
+	for request := range taskQueue {
 		// If there is a message, take out the Request from the queue and execute the bound business method
 		// (有消息则取出队列的Request，并执行绑定的业务方法)
-		case request, ok := <-taskQueue:
-			if !ok {
-				// DynamicBind Mode, destroy current worker by close the taskQueue
-				// (DynamicBind模式下，临时创建的worker, 是通过关闭taskQueue 来销毁当前worker)
-				slog.Error("taskQueue is closed, Worker quit", "workerID", workerID)
-				return
-			}
-			switch req := request.(type) {
+		switch req := request.(type) {
 
-			case ziface.IFuncRequest:
-				// Internal function call request (内部函数调用request)
+		case ziface.IFuncRequest:
+			// Internal function call request (内部函数调用request)
+			mh.doFuncHandler(req, workerID)
 
-				mh.doFuncHandler(req, workerID)
+		case ziface.IRequest: // Client message request
+			if !zconf.GlobalObject.RouterSlicesMode {
+				mh.doMsgHandler(req, workerID)
+			} else {
+				mh.RouterSlicesContext.RLock()
+				useContext := len(mh.RouterSlicesContext.Apis) > 0 || len(mh.RouterSlicesContext.Handlers) > 0
+				mh.RouterSlicesContext.RUnlock()
 
-			case ziface.IRequest: // Client message request
-
-				if !zconf.GlobalObject.RouterSlicesMode {
-					mh.doMsgHandler(req, workerID)
+				if useContext {
+					mh.doMsgHandlerSlicesContext(req, workerID)
 				} else {
-					mh.RouterSlicesContext.RLock()
-					useContext := len(mh.RouterSlicesContext.Apis) > 0 || len(mh.RouterSlicesContext.Handlers) > 0
-					mh.RouterSlicesContext.RUnlock()
-
-					if useContext {
-						mh.doMsgHandlerSlicesContext(req, workerID)
-					} else {
-						mh.doMsgHandlerSlices(req, workerID)
-					}
+					mh.doMsgHandlerSlices(req, workerID)
 				}
 			}
 		}
 	}
+
+	// DynamicBind Mode, destroy current worker by close the taskQueue
+	// (DynamicBind模式下，临时创建的worker, 是通过关闭taskQueue 来销毁当前worker)
+	slog.Error("taskQueue is closed, Worker quit", "workerID", workerID)
 }
 
 // StartWorkerPool starts the worker pool

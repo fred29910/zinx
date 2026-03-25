@@ -223,6 +223,7 @@ func (c *WsConnection) StartReader() {
 			// (从conn的IO中读取数据到内存缓冲buffer中)
 			messageType, buffer, err := c.conn.ReadMessage()
 			if err != nil {
+				slog.Error("read msg head", "messageType", messageType, "error", err.Error())
 				c.cancel()
 				return
 			}
@@ -231,11 +232,8 @@ func (c *WsConnection) StartReader() {
 				continue
 			}
 			n := len(buffer)
-			if err != nil {
-				slog.Error("read msg head", "datalen", n, "error", err.Error())
-				return
-			}
-			slog.Debug("read buffer", "buffer", hex.EncodeToString(buffer[0:n]))
+
+			slog.Debug("read buffer", "messageType", messageType, "len", n, "buffer", hex.EncodeToString(buffer[0:n]))
 
 			// Update the Active status of heartbeat detection normally after reading data from the peer.
 			// (正常读取到对端数据，更新心跳检测Active状态)
@@ -297,14 +295,11 @@ func (c *WsConnection) Start() {
 	// (开启用户从客户端读取数据流程的Goroutine)
 	go c.StartReader()
 
-	select {
-	case <-c.ctx.Done():
-		c.finalizer()
+	<-c.ctx.Done()
+	c.finalizer()
 
-		// 归还workerid
-		freeWorker(c)
-		return
-	}
+	// 归还workerid
+	freeWorker(c)
 }
 
 // Stop stops the connection and ends its current state.
@@ -583,7 +578,7 @@ func (c *WsConnection) IsAlive() bool {
 	// Check the time duration since the last activity of the connection, if it exceeds the maximum heartbeat interval,
 	// then the connection is considered dead
 	// (检查连接最后一次活动时间，如果超过心跳间隔，则认为连接已经死亡)
-	return time.Now().Sub(c.lastActivityTime) < zconf.GlobalObject.HeartbeatMaxDuration()
+	return time.Since(c.lastActivityTime) < zconf.GlobalObject.HeartbeatMaxDuration()
 }
 
 func (c *WsConnection) updateActivity() {

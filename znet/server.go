@@ -304,12 +304,9 @@ func (s *Server) ListenTcpConn() {
 
 		}
 	}()
-	select {
-	case <-s.exitChan:
-		err := listener.Close()
-		if err != nil {
-			slog.Error("listener close err", "err", err)
-		}
+	<-s.exitChan
+	if err = listener.Close(); err != nil {
+		slog.Error("listener close err", "err", err)
 	}
 }
 
@@ -417,14 +414,11 @@ func (s *Server) ListenKcpConn() {
 			go s.StartConn(dealConn)
 		}
 	}()
-	select {
-	case <-s.exitChan:
-		err := listener.Close()
-		if err != nil {
+		<-s.exitChan
+		if err = listener.Close(); err != nil {
 			slog.Error("KCP listener close err", "err", err)
 		}
 	}
-}
 
 // Start the network service
 // (开启网络服务)

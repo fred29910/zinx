@@ -299,14 +299,11 @@ func (c *KcpConnection) Start() {
 	// (开启用户从客户端读取数据流程的Goroutine)
 	go c.StartReader()
 
-	select {
-	case <-c.ctx.Done():
-		c.finalizer()
+	<-c.ctx.Done()
+	c.finalizer()
 
-		// 归还workerid
-		freeWorker(c)
-		return
-	}
+	// 归还workerid
+	freeWorker(c)
 }
 
 // Stop stops the connection and ends the current connection state.
